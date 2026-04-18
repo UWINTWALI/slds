@@ -1,0 +1,12 @@
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+pandas==2.2.2
+numpy==1.26.4
+geopandas==0.14.4
+scikit-learn==1.5.0
+joblib==1.4.2
+shapely==2.0.4
+fiona==1.9.6
+pyproj==3.6.1
+openpyxl==3.1.2
+pydantic==2.7.1
