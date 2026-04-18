@@ -13,7 +13,7 @@ import geopandas as gpd
 
 PROCESSED = Path(r"C:/Users/HP/Desktop/Proposal_Final/processed")
 DATASETS  = Path(r"C:/Users/HP/Desktop/Proposal_Final/Datasets")
-SHP_ADM3  = (DATASETS / "rwa_adm_2006_nisr_wgs1984_20181002_shp_2"
+SHP_ADM3  = (DATASETS / "rwa_adm_2006_administrative_boundary"
              / "rwa_adm3_2006_NISR_WGS1984_20181002.shp")
 
 CDI_WEIGHTS = {
@@ -99,6 +99,7 @@ def get_df() -> pd.DataFrame:
         p = PROCESSED / name
         if p.exists():
             df = pd.read_csv(p)
+            df.columns = df.columns.str.lower()
             return _compute_cdi(df)
     return _compute_cdi(_generate_demo())
 
@@ -110,14 +111,17 @@ def get_geojson() -> dict:
         return {"type": "FeatureCollection", "features": []}
 
     gdf = gpd.read_file(SHP_ADM3).to_crs("EPSG:4326")
+    gdf.columns = [c.lower() if c != "geometry" else c for c in gdf.columns]
     # simplify geometry to reduce response size
     gdf["geometry"] = gdf["geometry"].simplify(0.002, preserve_topology=True)
 
     sector_col = _find_col(df, "adm3")
     shp_col    = _find_col(gdf, "adm3")
     if sector_col and shp_col:
-        cols = [c for c in df.columns if c != "geometry"]
-        gdf  = gdf.merge(df[cols], left_on=shp_col, right_on=sector_col, how="left")
+        # Only bring CDI/derived columns from df — avoid duplicate adm columns
+        exclude = set(gdf.columns) - {shp_col, "geometry"}
+        merge_cols = [c for c in df.columns if c not in exclude or c == sector_col]
+        gdf = gdf.merge(df[merge_cols], left_on=shp_col, right_on=sector_col, how="left")
 
     # Keep only lightweight properties
     keep = [c for c in ["adm3_en", "adm2_en", "adm1_en", "cdi", "cdi_national_rank",

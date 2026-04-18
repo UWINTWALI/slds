@@ -7,7 +7,10 @@ from functools import lru_cache
 
 import numpy as np
 import pandas as pd
-import joblib
+try:
+    import joblib
+except ImportError:
+    joblib = None
 
 from services.data_service import get_df, _find_col
 
@@ -16,6 +19,8 @@ MODELS = Path(r"C:/Users/HP/Desktop/Proposal_Final/models")
 
 @lru_cache(maxsize=1)
 def get_model() -> dict | None:
+    if joblib is None:
+        return None
     p = MODELS / "poverty_model.pkl"
     if p.exists():
         return joblib.load(p)
