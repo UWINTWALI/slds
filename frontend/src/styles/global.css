@@ -949,6 +949,122 @@ input[type="range"] {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   HOME PAGE — ROLE-SPECIFIC DASHBOARD COMPONENTS
+═══════════════════════════════════════════════════════════════════════════ */
+
+.home-welcome-bar {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-left: 4px solid var(--black);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.home-welcome-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--black);
+  letter-spacing: -.3px;
+  margin-bottom: 4px;
+}
+
+.home-welcome-sub {
+  font-size: 12px;
+  color: var(--gray-500);
+  line-height: 1.5;
+}
+
+/* Quick-access module cards */
+.home-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.home-quick-card {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  padding: 20px 18px;
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow .15s, transform .12s, border-color .15s;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.home-quick-card:hover {
+  box-shadow: 0 6px 24px rgba(0,0,0,.08);
+  transform: translateY(-2px);
+  border-color: var(--card-accent, var(--gray-400));
+}
+
+.home-quick-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+}
+
+.home-quick-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--black);
+}
+
+.home-quick-desc {
+  font-size: 12px;
+  color: var(--gray-500);
+  line-height: 1.5;
+  flex: 1;
+}
+
+.home-quick-arrow {
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 8px;
+  transition: transform .12s;
+}
+
+.home-quick-card:hover .home-quick-arrow {
+  transform: translateX(4px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SIDEBAR ROLE BADGE
+═══════════════════════════════════════════════════════════════════════════ */
+
+.sidebar-role-badge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 16px;
+  margin: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  font-size: 11px;
+}
+
+.role-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    SIDEBAR USER PANEL (dashboard)
 ═══════════════════════════════════════════════════════════════════════════ */
 

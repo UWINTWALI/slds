@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
          RadarChart, Radar, PolarGrid, PolarAngleAxis, Cell } from 'recharts'
 import { useApi } from '../hooks/useApi'
+import { useRole } from '../hooks/useRole'
 import { getDistricts, getDistrictSummary, getDistrictSectors, getDistrictGeojson } from '../api/client'
 import MetricCard from '../components/MetricCard'
 import DataTable from '../components/DataTable'
@@ -26,7 +27,8 @@ function normalize(val, arr) {
 }
 
 export default function DistrictPlanner() {
-  const [district,    setDistrict]    = useState('')
+  const { isDistrict, district: assignedDistrict, meta } = useRole()
+  const [district,    setDistrict]    = useState(assignedDistrict ?? '')
   const [compareA,    setCompareA]    = useState('')
   const [compareB,    setCompareB]    = useState('')
   const [tab,         setTab]         = useState('ranking')
@@ -36,6 +38,7 @@ export default function DistrictPlanner() {
   const { data: districts } = useApi(getDistricts)
 
   useEffect(() => {
+    // Don't override if district is already locked to the officer's assignment
     if (districts?.length && !district) setDistrict(districts[0])
   }, [districts])
 
@@ -75,9 +78,29 @@ export default function DistrictPlanner() {
         <div style={{ display:'flex', alignItems:'center', gap:16 }}>
           <div className="form-group" style={{ marginBottom:0, minWidth:220 }}>
             <label style={{ marginBottom:4 }}>District</label>
-            <select value={district} onChange={e => setDistrict(e.target.value)}>
-              {districts?.map(d => <option key={d}>{d}</option>)}
-            </select>
+            {isDistrict && assignedDistrict
+              ? (
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <div style={{
+                    padding:'8px 12px', border:'1px solid var(--gray-200)',
+                    borderRadius:'var(--radius)', background:'var(--gray-50)',
+                    fontSize:13, fontWeight:600, color: meta.color,
+                  }}>
+                    {district}
+                  </div>
+                  <span style={{ fontSize:10, background: meta.bg,
+                    border:`1px solid ${meta.dot}33`, borderRadius:4, padding:'2px 7px',
+                    fontWeight:600, color: meta.color }}>
+                    Assigned
+                  </span>
+                </div>
+              )
+              : (
+                <select value={district} onChange={e => setDistrict(e.target.value)}>
+                  {districts?.map(d => <option key={d}>{d}</option>)}
+                </select>
+              )
+            }
           </div>
           {summary && !ls && (
             <div style={{ display:'flex', gap:24, flexWrap:'wrap' }}>

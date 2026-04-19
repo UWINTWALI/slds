@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth, DEMO_USERS, ROLE_META } from '../context/AuthContext'
 
 const STATS = [
   { value: '416',    label: 'Sectors Monitored',      icon: '◎', sub: 'Across all 5 provinces' },
@@ -161,6 +161,36 @@ export default function LandingPage() {
                     support@risa.rw
                   </a>
                 </p>
+              </div>
+
+              {/* Demo credentials */}
+              <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--gray-100)' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--gray-400)', marginBottom: 8 }}>
+                  Demo Credentials
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {DEMO_USERS.map(u => {
+                    const m = ROLE_META[u.role]
+                    return (
+                      <button
+                        key={u.username}
+                        type="button"
+                        onClick={() => { setUsername(u.username); setPassword(u.password) }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 8,
+                          padding: '6px 10px', borderRadius: 6, border: `1px solid ${m.dot}30`,
+                          background: m.bg, cursor: 'pointer', textAlign: 'left', width: '100%',
+                        }}
+                      >
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: m.dot, flexShrink: 0 }} />
+                        <span style={{ fontWeight: 700, fontSize: 11, color: m.color, minWidth: 60 }}>{u.username}</span>
+                        <span style={{ fontSize: 10, color: 'var(--gray-500)', flex: 1 }}>{m.label}{u.district ? ` · ${u.district}` : ''}{u.sector ? ` / ${u.sector}` : ''}</span>
+                        <span style={{ fontSize: 10, color: 'var(--gray-400)', fontStyle: 'italic' }}>{u.password}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--gray-400)', marginTop: 6 }}>Click any row to auto-fill credentials</div>
               </div>
             </div>
           </div>

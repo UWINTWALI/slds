@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
          RadarChart, Radar, PolarGrid, PolarAngleAxis } from 'recharts'
 import { useApi } from '../hooks/useApi'
+import { useRole } from '../hooks/useRole'
 import { getDistricts, getSectorList, getSector, getSectorNeighbors, getDistrictSectors } from '../api/client'
 import MetricCard from '../components/MetricCard'
 import DataTable from '../components/DataTable'
@@ -26,8 +27,10 @@ function fmt(key, val) {
 }
 
 export default function SectorPlanner() {
-  const [district,  setDistrict]  = useState('')
-  const [sector,    setSector]    = useState('')
+  const { isSector, district: assignedDistrict, sector: assignedSector, meta } = useRole()
+
+  const [district,  setDistrict]  = useState(assignedDistrict ?? '')
+  const [sector,    setSector]    = useState(assignedSector   ?? '')
 
   const { data: districts } = useApi(getDistricts)
 
@@ -40,6 +43,7 @@ export default function SectorPlanner() {
   )
 
   useEffect(() => {
+    // For sector officer, keep their assigned sector selected
     if (sectorList?.length && !sector) setSector(sectorList[0])
   }, [sectorList])
 
@@ -91,19 +95,62 @@ export default function SectorPlanner() {
     <div className="gap-16">
       {/* Selectors */}
       <div className="card" style={{ padding:'14px 20px' }}>
-        <div style={{ display:'flex', gap:16, alignItems:'flex-end' }}>
+        <div style={{ display:'flex', gap:16, alignItems:'flex-end', flexWrap:'wrap' }}>
+
+          {/* District */}
           <div className="form-group" style={{ marginBottom:0, minWidth:200 }}>
             <label>District</label>
-            <select value={district} onChange={e => { setDistrict(e.target.value); setSector('') }}>
-              {districts?.map(d => <option key={d}>{d}</option>)}
-            </select>
+            {isSector && assignedDistrict
+              ? (
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <div style={{
+                    padding:'8px 12px', border:'1px solid var(--gray-200)',
+                    borderRadius:'var(--radius)', background:'var(--gray-50)',
+                    fontSize:13, fontWeight:600, color: meta.color,
+                  }}>
+                    {district}
+                  </div>
+                  <span style={{ fontSize:10, background: meta.bg, border:`1px solid ${meta.dot}33`,
+                    borderRadius:4, padding:'2px 7px', fontWeight:600, color: meta.color }}>
+                    Assigned
+                  </span>
+                </div>
+              )
+              : (
+                <select value={district} onChange={e => { setDistrict(e.target.value); setSector('') }}>
+                  {districts?.map(d => <option key={d}>{d}</option>)}
+                </select>
+              )
+            }
           </div>
+
+          {/* Sector */}
           <div className="form-group" style={{ marginBottom:0, minWidth:200 }}>
             <label>Sector (Umurenge)</label>
-            <select value={sector} onChange={e => setSector(e.target.value)}>
-              {sectorList?.map(s => <option key={s}>{s}</option>)}
-            </select>
+            {isSector && assignedSector
+              ? (
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <div style={{
+                    padding:'8px 12px', border:'1px solid var(--gray-200)',
+                    borderRadius:'var(--radius)', background:'var(--gray-50)',
+                    fontSize:13, fontWeight:600, color: meta.color,
+                  }}>
+                    {sector}
+                  </div>
+                  <span style={{ fontSize:10, background: meta.bg, border:`1px solid ${meta.dot}33`,
+                    borderRadius:4, padding:'2px 7px', fontWeight:600, color: meta.color }}>
+                    Assigned
+                  </span>
+                </div>
+              )
+              : (
+                <select value={sector} onChange={e => setSector(e.target.value)}>
+                  {sectorList?.map(s => <option key={s}>{s}</option>)}
+                </select>
+              )
+            }
           </div>
+
         </div>
       </div>
 
