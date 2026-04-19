@@ -115,13 +115,23 @@ def get_geojson() -> dict:
     # simplify geometry to reduce response size
     gdf["geometry"] = gdf["geometry"].simplify(0.002, preserve_topology=True)
 
-    sector_col = _find_col(df, "adm3")
-    shp_col    = _find_col(gdf, "adm3")
-    if sector_col and shp_col:
-        # Only bring CDI/derived columns from df — avoid duplicate adm columns
-        exclude = set(gdf.columns) - {shp_col, "geometry"}
-        merge_cols = [c for c in df.columns if c not in exclude or c == sector_col]
-        gdf = gdf.merge(df[merge_cols], left_on=shp_col, right_on=sector_col, how="left")
+    # Prefer merging on adm3_pcode (unique per sector) to avoid duplicate name collisions
+    shp_pcode = "adm3_pcode" if "adm3_pcode" in gdf.columns else None
+    df_pcode  = "adm3_pcode" if "adm3_pcode" in df.columns  else None
+
+    if shp_pcode and df_pcode:
+        # Unique-key merge — no duplicates
+        exclude    = set(gdf.columns) - {shp_pcode, "geometry"}
+        merge_cols = [c for c in df.columns if c not in exclude or c == df_pcode]
+        gdf = gdf.merge(df[merge_cols], left_on=shp_pcode, right_on=df_pcode, how="left")
+    else:
+        # Fallback: merge on name (may create duplicates for same-name sectors)
+        sector_col = _find_col(df, "adm3")
+        shp_col    = _find_col(gdf, "adm3")
+        if sector_col and shp_col:
+            exclude    = set(gdf.columns) - {shp_col, "geometry"}
+            merge_cols = [c for c in df.columns if c not in exclude or c == sector_col]
+            gdf = gdf.merge(df[merge_cols], left_on=shp_col, right_on=sector_col, how="left")
 
     # Keep only lightweight properties
     keep = [c for c in ["adm3_en", "adm2_en", "adm1_en", "cdi", "cdi_national_rank",

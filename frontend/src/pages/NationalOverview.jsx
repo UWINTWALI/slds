@@ -8,6 +8,7 @@ import ChoroplethMap from '../components/ChoroplethMap'
 
 const COLOR_BY_OPTIONS = [
   { value: 'cdi',                      label: 'Composite Development Index' },
+  { value: 'nightlight_mean',          label: 'Night Light Intensity' },
   { value: 'predicted_poverty_rate',   label: 'Poverty Rate' },
   { value: 'road_density_km_per_km2',  label: 'Road Density' },
   { value: 'health_facility_count',    label: 'Health Facilities' },
@@ -19,7 +20,7 @@ const TABLE_COLS = ['adm3_en','adm2_en','cdi','cdi_national_rank','tier',
                     'health_facility_count','school_count','is_lagging']
 
 export default function NationalOverview() {
-  const [colorBy,  setColorBy]  = useState('cdi')
+  const [colorBy,  setColorBy]  = useState('nightlight_mean')
   const [rankView, setRankView] = useState('bottom')
 
   const { data: summary,  loading: l1 } = useApi(getNationalSummary)
@@ -77,12 +78,19 @@ export default function NationalOverview() {
             ? <div className="loading"><div className="spinner"/>Loading map…</div>
             : <ChoroplethMap geojson={geojson} colorBy={colorBy} height={380} />
           }
-          <div style={{ fontSize:11, color:'var(--gray-400)', marginTop:8 }}>
-            {colorBy === 'cdi'
-              ? 'Darker = higher development'
-              : colorBy === 'predicted_poverty_rate'
-              ? 'Darker = higher poverty'
-              : 'Darker = higher value'}
+          <div style={{ fontSize:11, color:'var(--gray-500)', marginTop:8, display:'flex', alignItems:'center', gap:6 }}>
+            <span style={{ fontSize:13 }}>Low</span>
+            <span style={{
+              display:'inline-block', width:100, height:10, borderRadius:3,
+              background: colorBy === 'nightlight_mean'
+                ? 'linear-gradient(to right, #000000, #3c1400, #b45000, #ffb400, #ffff50)'
+                : colorBy === 'predicted_poverty_rate'
+                ? 'linear-gradient(to right, #fcfdbf, #fe9f6d, #de4968, #4f1275, #000004)'
+                : 'linear-gradient(to right, #000004, #4f1275, #de4968, #fe9f6d, #fcfdbf)',
+              margin:'0 4px',
+            }} />
+            <span style={{ fontSize:13 }}>High</span>
+            {colorBy === 'predicted_poverty_rate' && <span style={{ marginLeft:8, color:'var(--gray-400)' }}>(bright = low poverty)</span>}
           </div>
         </div>
 

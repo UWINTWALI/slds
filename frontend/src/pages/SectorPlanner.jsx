@@ -149,7 +149,7 @@ export default function SectorPlanner() {
               <div className="card-title">Location — {district}</div>
               {lm
                 ? <div className="loading"><div className="spinner"/>Loading map…</div>
-                : <ChoroplethMap geojson={geojson} colorBy="cdi" height={320} />
+                : <ChoroplethMap geojson={geojson} colorBy="nightlight_mean" height={320} />
               }
               <div style={{ fontSize:11, color:'var(--gray-400)', marginTop:6 }}>
                 Showing all sectors in {district}. Selected: <strong>{sector}</strong>

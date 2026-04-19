@@ -26,11 +26,12 @@ function normalize(val, arr) {
 }
 
 export default function DistrictPlanner() {
-  const [district,  setDistrict]  = useState('')
-  const [compareA,  setCompareA]  = useState('')
-  const [compareB,  setCompareB]  = useState('')
-  const [tab,       setTab]       = useState('ranking')
+  const [district,    setDistrict]    = useState('')
+  const [compareA,    setCompareA]    = useState('')
+  const [compareB,    setCompareB]    = useState('')
+  const [tab,         setTab]         = useState('ranking')
   const [ganttMonths, setGanttMonths] = useState(12)
+  const [mapColorBy,  setMapColorBy]  = useState('nightlight_mean')
 
   const { data: districts } = useApi(getDistricts)
 
@@ -161,13 +162,34 @@ export default function DistrictPlanner() {
       {/* Map tab */}
       {tab === 'map' && (
         <div className="card">
-          <div className="card-title">Map — {district}</div>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+            <div className="card-title" style={{ marginBottom:0 }}>Map — {district}</div>
+            <select
+              value={mapColorBy}
+              onChange={e => setMapColorBy(e.target.value)}
+              style={{ width:'auto', padding:'4px 8px', fontSize:12 }}
+            >
+              <option value="cdi">CDI</option>
+              <option value="nightlight_mean">Night Light</option>
+              <option value="predicted_poverty_rate">Poverty Rate</option>
+              <option value="road_density_km_per_km2">Road Density</option>
+              <option value="health_facility_count">Health Facilities</option>
+              <option value="school_count">Schools</option>
+            </select>
+          </div>
           {lm
             ? <div className="loading"><div className="spinner"/>Loading map…</div>
             : geojson?.features?.length
-              ? <ChoroplethMap geojson={geojson} colorBy="cdi" height={500} />
+              ? <ChoroplethMap geojson={geojson} colorBy={mapColorBy} height={500} />
               : <div className="empty-state">Map data not available</div>
           }
+          <div style={{ fontSize:11, color:'var(--gray-400)', marginTop:6 }}>
+            {mapColorBy === 'nightlight_mean'
+              ? 'Black = no light · Yellow = high electrification'
+              : mapColorBy === 'predicted_poverty_rate'
+              ? 'Bright = low poverty · Dark = high poverty'
+              : 'Bright = high · Dark = low'}
+          </div>
         </div>
       )}
 
