@@ -1,4 +1,5 @@
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 const NAV = [
   { to: '/',           icon: '⌂',  label: 'Home' },
@@ -9,9 +10,17 @@ const NAV = [
 ]
 
 export default function Layout() {
-  const { pathname } = useLocation()
+  const { pathname }    = useLocation()
+  const { user, logout} = useAuth()
+  const navigate        = useNavigate()
+
   const current = NAV.find(n => n.to !== '/' && pathname.startsWith(n.to))
                || NAV.find(n => n.to === pathname)
+
+  function handleLogout() {
+    logout()
+    navigate('/login', { replace: true })
+  }
 
   return (
     <div className="app-shell">
@@ -40,6 +49,26 @@ export default function Layout() {
           ))}
         </nav>
 
+        {/* ── User panel ── */}
+        {user && (
+          <div className="sidebar-user">
+            <div className="sidebar-user-avatar">
+              {user.name?.charAt(0).toUpperCase() ?? 'A'}
+            </div>
+            <div className="sidebar-user-info">
+              <div className="sidebar-user-name">{user.name}</div>
+              <div className="sidebar-user-role">{user.role}</div>
+            </div>
+            <button
+              className="sidebar-logout-btn"
+              onClick={handleLogout}
+              title="Sign out"
+            >
+              ⏻
+            </button>
+          </div>
+        )}
+
         <div className="sidebar-footer">
           Sector-Level Development<br />
           Simulator v1.0<br />
@@ -56,6 +85,12 @@ export default function Layout() {
               <div className="page-subtitle">For {current.role}</div>
             )}
           </div>
+          {user && (
+            <div className="header-user-pill">
+              <span className="header-user-dot" />
+              {user.name} · {user.role}
+            </div>
+          )}
         </div>
         <div className="page-body">
           <Outlet />
