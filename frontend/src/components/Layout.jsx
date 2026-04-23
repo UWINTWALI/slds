@@ -1,49 +1,62 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth, ROLE_META } from '../context/AuthContext'
-import { useRole } from '../hooks/useRole'
+import { useRole }            from '../hooks/useRole'
+import { useTheme }           from '../context/ThemeContext'
+import {
+  IconHome, IconGlobe, IconMap, IconMapPin,
+  IconFlask, IconUsers, IconLogOut, IconSun, IconMoon,
+} from './Icons'
 
 const ALL_NAV = [
   {
     to:    '/',
-    icon:  '⌂',
+    Icon:  IconHome,
     label: 'Home',
     roles: ['national_admin', 'district_officer', 'sector_officer', 'analyst'],
   },
   {
     to:    '/national',
-    icon:  '◉',
+    Icon:  IconGlobe,
     label: 'National Overview',
     sub:   'MINALOC / RISA',
     roles: ['national_admin', 'analyst'],
   },
   {
     to:    '/district',
-    icon:  '⊞',
+    Icon:  IconMap,
     label: 'District Planner',
     sub:   'District Officers',
     roles: ['national_admin', 'district_officer', 'sector_officer', 'analyst'],
   },
   {
     to:    '/sector',
-    icon:  '◎',
+    Icon:  IconMapPin,
     label: 'Sector Planner',
     sub:   'Sector Officers',
     roles: ['national_admin', 'district_officer', 'sector_officer', 'analyst'],
   },
   {
     to:    '/simulation',
-    icon:  '⟳',
+    Icon:  IconFlask,
     label: 'Simulation',
     sub:   'All users',
     roles: ['national_admin', 'district_officer', 'sector_officer', 'analyst'],
   },
+  {
+    to:    '/users',
+    Icon:  IconUsers,
+    label: 'User Management',
+    sub:   'National Admin',
+    roles: ['national_admin'],
+  },
 ]
 
 export default function Layout() {
-  const { pathname }     = useLocation()
-  const { user, logout } = useAuth()
-  const { role, meta }   = useRole()
-  const navigate         = useNavigate()
+  const { pathname }           = useLocation()
+  const { user, logout }       = useAuth()
+  const { role, meta }         = useRole()
+  const navigate               = useNavigate()
+  const { theme, toggleTheme } = useTheme()
 
   const nav = ALL_NAV.filter(n => n.roles.includes(role))
 
@@ -59,6 +72,7 @@ export default function Layout() {
     <div className="app-shell">
       {/* ── Sidebar ── */}
       <aside className="sidebar">
+
         {/* Logo */}
         <div className="sidebar-logo">
           <div className="sidebar-logo-mark" style={{ background: meta.accent }}>SL</div>
@@ -87,24 +101,21 @@ export default function Layout() {
         {/* Navigation */}
         <nav className="sidebar-nav">
           <div className="nav-section-label">Navigation</div>
-          {nav.map(({ to, icon, label }) => (
+          {nav.map(({ to, Icon, label }) => (
             <NavLink
               key={to}
               to={to}
               end={to === '/'}
               className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}
-              style={({ isActive }) => isActive
-                ? { borderRightColor: meta.accent }
-                : {}
-              }
+              style={({ isActive }) => isActive ? { borderRightColor: meta.accent } : {}}
             >
-              <span className="nav-icon">{icon}</span>
+              <Icon size={16} />
               {label}
             </NavLink>
           ))}
         </nav>
 
-        {/* User panel */}
+        {/* User info */}
         {user && (
           <div className="sidebar-user">
             <div className="sidebar-user-avatar" style={{ background: meta.accent }}>
@@ -114,20 +125,28 @@ export default function Layout() {
               <div className="sidebar-user-name">{user.name}</div>
               <div className="sidebar-user-role">{user.title}</div>
             </div>
-            <button
-              className="sidebar-logout-btn"
-              onClick={handleLogout}
-              title="Sign out"
-            >
-              ⏻
-            </button>
           </div>
         )}
+
+        {/* Logout button */}
+        <button className="sidebar-logout-btn" onClick={handleLogout}>
+          <IconLogOut size={15} />
+          Logout
+        </button>
+
+        {/* Theme toggle */}
+        <button className="theme-toggle-btn" onClick={toggleTheme}>
+          {theme === 'dark'
+            ? <IconSun  size={14} />
+            : <IconMoon size={14} />
+          }
+          {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+        </button>
 
         <div className="sidebar-footer">
           Sector-Level Development<br />
           Simulator v1.0<br />
-          University of Rwanda
+          CBC Team - Hackathon
         </div>
       </aside>
 
