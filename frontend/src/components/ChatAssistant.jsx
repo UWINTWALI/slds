@@ -69,7 +69,7 @@ const SUGGESTIONS = [
 const WELCOME = {
   role: 'assistant',
   content:
-    "👋 Hello! I'm the **SLDS Assistant** — your guide to Rwanda's " +
+    "Hello! I'm the **SLDS Assistant** — your guide to Rwanda's " +
     'Sector-Level Development Simulator.\n\n' +
     'I can help you understand any part of the platform: user roles, ' +
     'the CDI score, planning modules, and how to navigate the system.\n\n' +

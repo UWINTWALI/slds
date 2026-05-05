@@ -80,7 +80,7 @@ export default function DataTable({ rows = [], columns, highlight, onRowClick, s
                 {cols.map(c => (
                   <td key={c}>
                     {c === 'tier'       ? <TierBadge tier={row[c]} />
-                   : c === 'is_lagging' ? (row[c] ? <span style={{color:'var(--danger)',fontWeight:500}}>⚠ Yes</span> : <span style={{color:'var(--gray-400)'}}>No</span>)
+                   : c === 'is_lagging' ? (row[c] ? <span style={{color:'var(--danger)',fontWeight:500}}>Yes</span> : <span style={{color:'var(--gray-400)'}}>No</span>)
                    : fmt(c, row[c])}
                   </td>
                 ))}

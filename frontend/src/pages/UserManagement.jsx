@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+﻿import { useState, useCallback } from 'react'
 import { useApi } from '../hooks/useApi'
 import { getUsers, deactivateUser, activateUser, assignRole, revokeRole } from '../api/client'
 
@@ -32,7 +32,7 @@ function RoleBadge({ role, onRevoke, busy }) {
             color: m.color, opacity: busy ? 0.3 : 0.6,
             padding: '0 0 0 2px', fontSize: 13, lineHeight: 1, fontWeight: 700,
           }}
-        >×</button>
+        >Ã—</button>
       )}
     </span>
   )
@@ -105,24 +105,24 @@ export default function UserManagement() {
     }
   }
 
-  // ── Loading / error states ────────────────────────────────────────────────
+  // â”€â”€ Loading / error states â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  if (loading) return <div className="loading"><div className="spinner" />Loading users…</div>
+  if (loading) return <div className="loading"><div className="spinner" />Loading usersâ€¦</div>
 
   if (error) {
     const s = error?.response?.status
     const msg = s === 401
-      ? 'No valid session token — sign out and sign back in with the backend running.'
+      ? 'No valid session token â€” sign out and sign back in with the backend running.'
       : s === 403
       ? 'Your account does not have the national_admin role. Run seed_users.py.'
       : 'Cannot reach the backend. Make sure uvicorn is running on port 8000.'
-    return <div className="alert alert-danger">⚠ {msg}</div>
+    return <div className="alert alert-danger">âš  {msg}</div>
   }
 
   const active   = users?.filter(u =>  u.is_active) ?? []
   const inactive = users?.filter(u => !u.is_active) ?? []
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   return (
     <div className="gap-16">
@@ -153,9 +153,9 @@ export default function UserManagement() {
 
       {globalError && (
         <div className="alert alert-danger" style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-          <span>⚠ {globalError}</span>
+          <span>âš  {globalError}</span>
           <button onClick={() => setGlobalError('')}
-            style={{ background:'none', border:'none', cursor:'pointer', fontWeight:700, fontSize:16 }}>×</button>
+            style={{ background:'none', border:'none', cursor:'pointer', fontWeight:700, fontSize:16 }}>Ã—</button>
         </div>
       )}
 
@@ -202,7 +202,7 @@ export default function UserManagement() {
                     <td style={{ fontSize: 12 }}>
                       {user.district
                         ? <>{user.district}{user.sector && <span style={{ color: 'var(--gray-400)' }}> / {user.sector}</span>}</>
-                        : <span style={{ color: 'var(--gray-300)' }}>—</span>
+                        : <span style={{ color: 'var(--gray-300)' }}>â€”</span>
                       }
                     </td>
 
@@ -240,7 +240,7 @@ export default function UserManagement() {
                             disabled={busy === `${user.id}_assign`}
                             onClick={() => handleAssign(user.id)}
                           >
-                            {busy === `${user.id}_assign` ? '…' : 'Save'}
+                            {busy === `${user.id}_assign` ? 'â€¦' : 'Save'}
                           </button>
                           <button
                             className="btn btn-secondary"
@@ -296,7 +296,7 @@ export default function UserManagement() {
                         onClick={() => handleToggleActive(user)}
                       >
                         {busy === `${user.id}_status`
-                          ? '…'
+                          ? 'â€¦'
                           : user.is_active ? 'Deactivate' : 'Activate'
                         }
                       </button>

@@ -3,11 +3,16 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
          RadarChart, Radar, PolarGrid, PolarAngleAxis } from 'recharts'
 import { useApi } from '../hooks/useApi'
 import { useRole } from '../hooks/useRole'
-import { getDistricts, getSectorList, getSector, getSectorNeighbors, getDistrictSectors } from '../api/client'
+import {
+  getDistricts, getSectorList, getSector, getSectorNeighbors,
+  getDistrictSectors, getDistrictGeojson,
+} from '../api/client'
 import MetricCard from '../components/MetricCard'
 import DataTable from '../components/DataTable'
 import ChoroplethMap from '../components/ChoroplethMap'
-import { getDistrictGeojson } from '../api/client'
+import { generateSectorReport } from '../utils/reportUtils'
+import { fmt, normValue, getLagAlertType } from '../utils/sectorUtils'
+import { IconFileText, IconAlertTriangle, IconCheckCircle, IconInfo } from '../components/Icons'
 
 const FEAT = {
   cdi:                     'CDI',
@@ -16,14 +21,6 @@ const FEAT = {
   health_facility_count:   'Health Posts',
   school_count:            'Schools',
   nightlight_mean:         'Night Light',
-}
-
-function fmt(key, val) {
-  if (val == null) return '—'
-  if (key.includes('poverty')) return `${(val*100).toFixed(1)}%`
-  if (key === 'cdi')           return val.toFixed(1)
-  if (key.includes('density')) return val.toFixed(2)
-  return String(val)
 }
 
 export default function SectorPlanner() {
@@ -43,7 +40,6 @@ export default function SectorPlanner() {
   )
 
   useEffect(() => {
-    // For sector officer, keep their assigned sector selected
     if (sectorList?.length && !sector) setSector(sectorList[0])
   }, [sectorList])
 
@@ -78,7 +74,7 @@ export default function SectorPlanner() {
   const norm = (k, v) => {
     const arr = allVals(k)
     const lo = Math.min(...arr), hi = Math.max(...arr)
-    return hi === lo ? 0.5 : (v - lo) / (hi - lo)
+    return normValue(v, lo, hi)
   }
   const radarData = radarKeys.map(k => ({
     subject: FEAT[k],
@@ -160,16 +156,18 @@ export default function SectorPlanner() {
         <>
           {/* Lag alert */}
           {gap < -10
-            ? <div className="alert alert-danger">
-                ⚠ LAG ALERT — <strong>{sector}</strong> is {Math.abs(gap).toFixed(1)} CDI points below the {district} district average ({distAvg.toFixed(1)}).
-                Priority investment is recommended.
+            ? <div className="alert alert-danger" style={{ display:'flex', alignItems:'flex-start', gap:9 }}>
+                <IconAlertTriangle size={15} style={{ marginTop:1, flexShrink:0 }} />
+                <span>LAG ALERT — <strong>{sector}</strong> is {Math.abs(gap).toFixed(1)} CDI points below the {district} district average ({distAvg.toFixed(1)}). Priority investment is recommended.</span>
               </div>
             : gap < 0
-            ? <div className="alert alert-warning">
-                {sector} is {Math.abs(gap).toFixed(1)} points below district average. Monitor closely.
+            ? <div className="alert alert-warning" style={{ display:'flex', alignItems:'flex-start', gap:9 }}>
+                <IconAlertTriangle size={15} style={{ marginTop:1, flexShrink:0 }} />
+                <span>{sector} is {Math.abs(gap).toFixed(1)} points below district average. Monitor closely.</span>
               </div>
-            : <div className="alert alert-success">
-                {sector} is {gap.toFixed(1)} points above district average.
+            : <div className="alert alert-success" style={{ display:'flex', alignItems:'flex-start', gap:9 }}>
+                <IconCheckCircle size={15} style={{ marginTop:1, flexShrink:0 }} />
+                <span>{sector} is {gap.toFixed(1)} points above district average.</span>
               </div>
           }
 
@@ -190,19 +188,20 @@ export default function SectorPlanner() {
             <MetricCard label="Health Posts"   value={sectorData.health_facility_count ?? '—'} />
           </div>
 
-          {/* Map + radar */}
-          <div className="grid-2">
-            <div className="card">
-              <div className="card-title">Location — {district}</div>
-              {lm
-                ? <div className="loading"><div className="spinner"/>Loading map…</div>
-                : <ChoroplethMap geojson={geojson} colorBy="nightlight_mean" height={320} />
-              }
-              <div style={{ fontSize:11, color:'var(--gray-400)', marginTop:6 }}>
-                Showing all sectors in {district}. Selected: <strong>{sector}</strong>
-              </div>
+          {/* Full-width map */}
+          <div className="card">
+            <div className="card-title">District Map — {district}</div>
+            {lm
+              ? <div className="loading"><div className="spinner"/>Loading map…</div>
+              : <ChoroplethMap geojson={geojson} colorBy="nightlight_mean" height={420} />
+            }
+            <div style={{ fontSize:11, color:'var(--gray-400)', marginTop:6 }}>
+              All sectors in {district} displayed. Selected sector: <strong>{sector}</strong>
             </div>
+          </div>
 
+          {/* Development profile + gap analysis */}
+          <div className="grid-2">
             <div className="card">
               <div className="card-title">Development Profile vs District</div>
               <ResponsiveContainer width="100%" height={300}>
@@ -219,28 +218,27 @@ export default function SectorPlanner() {
                 <span>— District average</span>
               </div>
             </div>
-          </div>
 
-          {/* Gap analysis */}
-          <div className="card">
-            <div className="card-title">Infrastructure Gap vs District Average</div>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={gapData} margin={{ left:80, right:20, top:4, bottom:4 }}>
-                <XAxis type="number" tick={{ fontSize:11 }} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize:11 }} width={76} />
-                <Tooltip formatter={(v,n,p) => [
-                  `${p.payload.sVal != null ? fmt(Object.keys(FEAT).find(k=>FEAT[k]===p.payload.name), p.payload.sVal) : '—'} (this sector) vs ${p.payload.dAvg.toFixed(2)} (avg)`,
-                  'Gap',
-                ]} contentStyle={{ fontSize:12 }} />
-                <Bar dataKey="value" radius={2}>
-                  {gapData.map((d,i) => (
-                    <Bar key={i} fill={d.value < 0 ? '#dc2626' : '#16a34a'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-            <div style={{ fontSize:11, color:'var(--gray-400)', marginTop:4 }}>
-              Negative = below district average. Positive = above.
+            <div className="card">
+              <div className="card-title">Infrastructure Gap vs District Average</div>
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={gapData} margin={{ left:80, right:20, top:4, bottom:4 }}>
+                  <XAxis type="number" tick={{ fontSize:11 }} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize:11 }} width={76} />
+                  <Tooltip formatter={(v,n,p) => [
+                    `${p.payload.sVal != null ? fmt(Object.keys(FEAT).find(k=>FEAT[k]===p.payload.name), p.payload.sVal) : '—'} (this sector) vs ${p.payload.dAvg.toFixed(2)} (avg)`,
+                    'Gap',
+                  ]} contentStyle={{ fontSize:12 }} />
+                  <Bar dataKey="value" radius={2}>
+                    {gapData.map((d,i) => (
+                      <Bar key={i} fill={d.value < 0 ? '#dc2626' : '#16a34a'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              <div style={{ fontSize:11, color:'var(--gray-400)', marginTop:4 }}>
+                Negative = below district average · Positive = above
+              </div>
             </div>
           </div>
 
@@ -252,13 +250,10 @@ export default function SectorPlanner() {
               : neighbors?.length
                 ? (
                   <DataTable
-                    rows={[
-                      { ...sectorData, adm3_en: `${sectorData.adm3_en} ★` },
-                      ...(neighbors ?? []),
-                    ]}
+                    rows={[sectorData, ...(neighbors ?? [])]}
                     columns={neighborCols}
                     selectedKey="adm3_en"
-                    selectedValue={`${sector} ★`}
+                    selectedValue={sector}
                   />
                 )
                 : (
@@ -283,8 +278,15 @@ export default function SectorPlanner() {
             }
           </div>
 
-          {/* Export */}
-          <div>
+          {/* Export — PDF report */}
+          <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
+            <button
+              className="btn btn-primary"
+              onClick={() => generateSectorReport(sectorData, distSectors, sector, district)}
+              style={{ display:'flex', alignItems:'center', gap:7 }}
+            >
+              <IconFileText size={14} /> Generate Sector Report (PDF)
+            </button>
             <a
               href={`data:text/csv;charset=utf-8,${encodeURIComponent(
                 ['Field,Value',
@@ -304,10 +306,10 @@ export default function SectorPlanner() {
                  }).map(([k,v]) => `${k},${v}`)
                 ].join('\n')
               )}`}
-              download={`slds_request_${sector?.replace(/\s+/g,'_')}.csv`}
-              className="btn btn-primary"
+              download={`slds_sector_${sector?.replace(/\s+/g,'_')}.csv`}
+              className="btn btn-secondary"
             >
-              ↓ Export Investment Request Report
+              Export CSV
             </a>
           </div>
         </>

@@ -7,6 +7,8 @@ import { getDistricts, getDistrictSummary, getDistrictSectors, getDistrictGeojso
 import MetricCard from '../components/MetricCard'
 import DataTable from '../components/DataTable'
 import ChoroplethMap from '../components/ChoroplethMap'
+import { generateDistrictReport } from '../utils/reportUtils'
+import { IconBarChart, IconMap, IconScale, IconSliders, IconFileText } from '../components/Icons'
 
 const TABLE_COLS = ['adm3_en','cdi','cdi_district_rank','tier',
                     'predicted_poverty_rate','road_density_km_per_km2',
@@ -124,9 +126,16 @@ export default function DistrictPlanner() {
 
       {/* Tabs */}
       <div className="tabs">
-        {['ranking','map','compare','gantt'].map(t => (
-          <button key={t} className={`tab ${tab===t?'active':''}`} onClick={()=>setTab(t)}>
-            {{ ranking:'Sector Ranking', map:'District Map', compare:'Compare Sectors', gantt:'Sequencing' }[t]}
+        {[
+          { key: 'ranking', Icon: IconBarChart, label: 'Sector Ranking'   },
+          { key: 'map',     Icon: IconMap,      label: 'District Map'     },
+          { key: 'compare', Icon: IconScale,    label: 'Compare Sectors'  },
+          { key: 'gantt',   Icon: IconSliders,  label: 'Sequencing'       },
+        ].map(({ key, Icon: TabIcon, label }) => (
+          <button key={key} className={`tab ${tab===key?'active':''}`} onClick={()=>setTab(key)}
+            style={{ display:'flex', alignItems:'center', gap:6 }}>
+            <TabIcon size={13} />
+            {label}
           </button>
         ))}
       </div>
@@ -166,16 +175,25 @@ export default function DistrictPlanner() {
 
           {/* Table */}
           <div className="card">
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14, flexWrap:'wrap', gap:8 }}>
               <div className="card-title" style={{ marginBottom:0 }}>Ranking Table</div>
-              <a
-                href={`data:text/csv;charset=utf-8,${encodeURIComponent(
-                  sectors?.length ? [Object.keys(sectors[0]).join(','), ...sectors.map(r=>Object.values(r).join(','))].join('\n') : ''
-                )}`}
-                download={`slds_${district}_sectors.csv`}
-                className="btn btn-secondary"
-                style={{ fontSize:12 }}
-              >↓ Export CSV</a>
+              <div style={{ display:'flex', gap:8 }}>
+                <button
+                  onClick={() => generateDistrictReport(summary, sectors, district)}
+                  className="btn btn-primary"
+                  style={{ fontSize:12, display:'flex', alignItems:'center', gap:6 }}
+                >
+                  <IconFileText size={13} /> Submit Report to Ministry
+                </button>
+                <a
+                  href={`data:text/csv;charset=utf-8,${encodeURIComponent(
+                    sectors?.length ? [Object.keys(sectors[0]).join(','), ...sectors.map(r=>Object.values(r).join(','))].join('\n') : ''
+                  )}`}
+                  download={`slds_${district}_sectors.csv`}
+                  className="btn btn-secondary"
+                  style={{ fontSize:12 }}
+                >Export CSV</a>
+              </div>
             </div>
             <DataTable rows={sectors ?? []} columns={TABLE_COLS} />
           </div>

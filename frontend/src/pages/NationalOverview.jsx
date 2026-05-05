@@ -5,6 +5,7 @@ import { getNationalSummary, getNationalSectors, getNationalGeojson, getModelPer
 import MetricCard from '../components/MetricCard'
 import DataTable from '../components/DataTable'
 import ChoroplethMap from '../components/ChoroplethMap'
+import { IconGlobe, IconBarChart } from '../components/Icons'
 
 const COLOR_BY_OPTIONS = [
   { value: 'cdi',                      label: 'Composite Development Index' },
@@ -59,11 +60,15 @@ export default function NationalOverview() {
           value={summary?.avg_poverty_rate != null ? `${(summary.avg_poverty_rate*100).toFixed(1)}%` : '—'} />
       </div>
 
-      {/* Map + Equity chart */}
-      <div className="grid-2">
-        <div className="card">
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-            <div className="card-title" style={{ marginBottom:0 }}>Rwanda — Sector Map</div>
+      {/* ── Full-width map ── */}
+      <div className="card national-map-card">
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12, flexWrap:'wrap', gap:10 }}>
+          <div className="card-title" style={{ marginBottom:0, display:'flex', alignItems:'center', gap:7 }}>
+            <IconGlobe size={14} color="var(--gray-400)" />
+            Rwanda — National Sector Map
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <span style={{ fontSize:11, color:'var(--gray-500)' }}>Colour by:</span>
             <select
               value={colorBy}
               onChange={e => setColorBy(e.target.value)}
@@ -74,44 +79,49 @@ export default function NationalOverview() {
               ))}
             </select>
           </div>
-          {l3
-            ? <div className="loading"><div className="spinner"/>Loading map…</div>
-            : <ChoroplethMap geojson={geojson} colorBy={colorBy} height={380} />
-          }
-          <div style={{ fontSize:11, color:'var(--gray-500)', marginTop:8, display:'flex', alignItems:'center', gap:6 }}>
-            <span style={{ fontSize:13 }}>Low</span>
-            <span style={{
-              display:'inline-block', width:100, height:10, borderRadius:3,
-              background: colorBy === 'nightlight_mean'
-                ? 'linear-gradient(to right, #000000, #3c1400, #b45000, #ffb400, #ffff50)'
-                : colorBy === 'predicted_poverty_rate'
-                ? 'linear-gradient(to right, #fcfdbf, #fe9f6d, #de4968, #4f1275, #000004)'
-                : 'linear-gradient(to right, #000004, #4f1275, #de4968, #fe9f6d, #fcfdbf)',
-              margin:'0 4px',
-            }} />
-            <span style={{ fontSize:13 }}>High</span>
-            {colorBy === 'predicted_poverty_rate' && <span style={{ marginLeft:8, color:'var(--gray-400)' }}>(bright = low poverty)</span>}
-          </div>
         </div>
+        {l3
+          ? <div className="loading"><div className="spinner"/>Loading map…</div>
+          : <ChoroplethMap geojson={geojson} colorBy={colorBy} height={480} />
+        }
+        <div style={{ fontSize:11, color:'var(--gray-500)', marginTop:8, display:'flex', alignItems:'center', gap:6 }}>
+          <span style={{ fontSize:13 }}>Low</span>
+          <span style={{
+            display:'inline-block', width:120, height:10, borderRadius:3,
+            background: colorBy === 'nightlight_mean'
+              ? 'linear-gradient(to right, #000000, #3c1400, #b45000, #ffb400, #ffff50)'
+              : colorBy === 'predicted_poverty_rate'
+              ? 'linear-gradient(to right, #fcfdbf, #fe9f6d, #de4968, #4f1275, #000004)'
+              : 'linear-gradient(to right, #000004, #4f1275, #de4968, #fe9f6d, #fcfdbf)',
+            margin:'0 4px',
+          }} />
+          <span style={{ fontSize:13 }}>High</span>
+          {colorBy === 'predicted_poverty_rate' && <span style={{ marginLeft:8, color:'var(--gray-400)' }}>(bright = low poverty)</span>}
+          <span style={{ marginLeft:'auto', fontSize:11, color:'var(--gray-400)' }}>Hover any sector to see details · Click to drill down</span>
+        </div>
+      </div>
 
-        <div className="card">
-          <div className="card-title">District Equity — Average CDI</div>
-          <ResponsiveContainer width="100%" height={380}>
-            <BarChart data={distAvg} layout="vertical" margin={{ left:80, right:30, top:4, bottom:4 }}>
-              <XAxis type="number" domain={[0,100]} tick={{ fontSize:11 }} />
-              <YAxis type="category" dataKey="name" tick={{ fontSize:11 }} width={78} />
-              <Tooltip
-                formatter={v => [v.toFixed(1), 'Avg CDI']}
-                contentStyle={{ fontSize:12, border:'1px solid var(--gray-200)' }}
-              />
-              <Bar dataKey="cdi" radius={2}>
-                {distAvg.map((d, i) => (
-                  <Cell key={i} fill={d.cdi < 35 ? '#dc2626' : d.cdi < 55 ? '#ca8a04' : d.cdi < 75 ? '#16a34a' : '#27272a'} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+      {/* District equity chart — full width below the map */}
+      <div className="card">
+        <div className="card-title" style={{ display:'flex', alignItems:'center', gap:7 }}>
+          <IconBarChart size={14} color="var(--gray-400)" />
+          District Equity — Average CDI Across All Districts
         </div>
+        <ResponsiveContainer width="100%" height={320}>
+          <BarChart data={distAvg} layout="vertical" margin={{ left:90, right:40, top:4, bottom:4 }}>
+            <XAxis type="number" domain={[0,100]} tick={{ fontSize:11 }} />
+            <YAxis type="category" dataKey="name" tick={{ fontSize:11 }} width={86} />
+            <Tooltip
+              formatter={v => [v.toFixed(1), 'Avg CDI']}
+              contentStyle={{ fontSize:12, border:'1px solid var(--gray-200)' }}
+            />
+            <Bar dataKey="cdi" radius={2}>
+              {distAvg.map((d, i) => (
+                <Cell key={i} fill={d.cdi < 35 ? '#dc2626' : d.cdi < 55 ? '#ca8a04' : d.cdi < 75 ? '#16a34a' : '#27272a'} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
       </div>
 
       {/* Ranking table */}

@@ -69,7 +69,10 @@ function tooltipHTML(props) {
       if (k.includes('poverty')) val = `${(val * 100).toFixed(1)}%`
       else if (k === 'cdi')      val = Number(val).toFixed(1)
       else if (k.includes('density')) val = Number(val).toFixed(2)
-      return `<tr><td style="color:#71717a;padding:2px 8px 2px 0">${label}</td><td style="font-weight:500">${val}</td></tr>`
+      return `<tr>
+        <td style="color:rgba(255,255,255,0.7);padding:2px 10px 2px 0;font-size:11px">${label}</td>
+        <td style="font-weight:600;color:#fff;font-size:12px">${val}</td>
+      </tr>`
     })
     .join('')
   return `<table style="font-size:12px;font-family:Inter,sans-serif;border-collapse:collapse">${rows}</table>`

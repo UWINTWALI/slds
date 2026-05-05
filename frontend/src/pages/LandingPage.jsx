@@ -2,34 +2,40 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth, DEMO_USERS, ROLE_META } from '../context/AuthContext'
 import { getDistricts, getSectorList } from '../api/client'
+import {
+  IconGlobe, IconMap, IconMapPin, IconFlask, IconUsers, IconSliders, IconBarChart,
+  IconTarget, IconLock, IconUserPlus, IconShield, IconAlertTriangle, IconCheckCircle,
+} from '../components/Icons'
 
+/* ── Stats strip data ─────────────────────────────────────────────────────────── */
 const STATS = [
-  { value: '416',    label: 'Sectors Monitored',      icon: '◎', sub: 'Across all 5 provinces' },
-  { value: '30',     label: 'Districts Covered',       icon: '⊞', sub: 'Full national coverage' },
-  { value: '12.4M',  label: 'Citizens Served',         icon: '◉', sub: 'Estimated 2026 population' },
-  { value: '87%',    label: 'Data Completeness',        icon: '▣', sub: 'Sector-level indicators' },
-  { value: '5',      label: 'Decision Modules',         icon: '⟳', sub: 'Planning · Simulation · Mapping' },
-  { value: '2026',   label: 'Baseline Year',            icon: '◈', sub: 'Rwanda Vision 2050 aligned' },
+  { value: '416',   label: 'Sectors Monitored',  Icon: IconMapPin,  sub: 'Across all 5 provinces'          },
+  { value: '30',    label: 'Districts Covered',    Icon: IconMap,     sub: 'Full national coverage'          },
+  { value: '12.4M', label: 'Citizens Served',      Icon: IconUsers,   sub: 'Estimated 2026 population'       },
+  { value: '87%',   label: 'Data Completeness',    Icon: IconBarChart,sub: 'Sector-level indicators'         },
+  { value: '5',     label: 'Decision Modules',     Icon: IconSliders, sub: 'Planning · Simulation · Mapping' },
+  { value: '2026',  label: 'Baseline Year',         Icon: IconTarget,  sub: 'Rwanda Vision 2050 aligned'     },
 ]
 
+/* ── Feature cards data ────────────────────────────────────────────────────────── */
 const FEATURES = [
   {
-    icon: '◉',
+    Icon: IconGlobe,
     title: 'National Overview',
     desc: 'Monitor the Composite Development Index across all 416 sectors. Identify lagging areas and track equity gaps in real time.',
   },
   {
-    icon: '⊞',
+    Icon: IconMap,
     title: 'District Planning',
     desc: 'Compare sectors within a district, sequence investment priorities using data-driven Gantt scheduling, and export reports.',
   },
   {
-    icon: '◎',
+    Icon: IconMapPin,
     title: 'Sector Intelligence',
     desc: 'Drill into any sector — infrastructure gaps, poverty rates, nightlight intensity, and peer benchmarking against neighbors.',
   },
   {
-    icon: '⟳',
+    Icon: IconFlask,
     title: 'Policy Simulation',
     desc: 'Run what-if scenarios before committing resources. Simulate the CDI impact of road, health, or school investments.',
   },
@@ -37,12 +43,11 @@ const FEATURES = [
 
 const REGISTERABLE_ROLES = [
   { value: 'district_officer', label: 'District Officer' },
-  { value: 'sector_officer',   label: 'Sector Officer' },
-  { value: 'analyst',          label: 'Policy Analyst' },
+  { value: 'sector_officer',   label: 'Sector Officer'   },
+  { value: 'analyst',          label: 'Policy Analyst'   },
 ]
 
-// ── Login sub-component ────────────────────────────────────────────────────
-
+/* ── Login form ────────────────────────────────────────────────────────────────── */
 function LoginForm({ onSwitch }) {
   const { login }  = useAuth()
   const navigate   = useNavigate()
@@ -68,7 +73,9 @@ function LoginForm({ onSwitch }) {
   return (
     <>
       <div className="login-card-header">
-        <div className="login-card-icon">🔐</div>
+        <div className="login-card-icon">
+          <IconLock size={22} color="var(--rw-green)" />
+        </div>
         <div>
           <div className="login-card-title">Sign In</div>
           <div className="login-card-sub">Authorized personnel only</div>
@@ -103,11 +110,17 @@ function LoginForm({ onSwitch }) {
         </div>
 
         {error && (
-          <div className="login-error"><span>⚠</span> {error}</div>
+          <div className="login-error" style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <IconAlertTriangle size={14} style={{ flexShrink: 0 }} />
+            <span>{error}</span>
+          </div>
         )}
 
         <button type="submit" className="login-btn" disabled={loading}>
-          {loading ? <><span className="login-spinner" /> Verifying…</> : 'Sign In to Dashboard →'}
+          {loading
+            ? <><span className="login-spinner" /> Verifying…</>
+            : 'Sign In to Dashboard →'
+          }
         </button>
       </form>
 
@@ -166,8 +179,7 @@ function LoginForm({ onSwitch }) {
   )
 }
 
-// ── Register sub-component ─────────────────────────────────────────────────
-
+/* ── Register form ─────────────────────────────────────────────────────────────── */
 function RegisterForm({ onSwitch }) {
   const { register } = useAuth()
   const navigate     = useNavigate()
@@ -205,23 +217,10 @@ function RegisterForm({ onSwitch }) {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-
-    if (password !== confirm) {
-      setError('Passwords do not match.')
-      return
-    }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.')
-      return
-    }
-    if (needsDistrict && !district) {
-      setError('Please select a district.')
-      return
-    }
-    if (needsSector && !sector) {
-      setError('Please select a sector.')
-      return
-    }
+    if (password !== confirm)          { setError('Passwords do not match.'); return }
+    if (password.length < 6)           { setError('Password must be at least 6 characters.'); return }
+    if (needsDistrict && !district)    { setError('Please select a district.'); return }
+    if (needsSector   && !sector)      { setError('Please select a sector.'); return }
 
     setLoading(true)
     const result = await register({
@@ -244,7 +243,14 @@ function RegisterForm({ onSwitch }) {
   if (success) {
     return (
       <div style={{ textAlign: 'center', padding: '24px 0' }}>
-        <div style={{ fontSize: 36, marginBottom: 12 }}>✓</div>
+        <div style={{
+          width: 56, height: 56, borderRadius: '50%',
+          background: '#f0fdf4', border: '1px solid #bbf7d0',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 14px',
+        }}>
+          <IconCheckCircle size={26} color="#16a34a" />
+        </div>
         <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>Account created!</div>
         <div style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 20 }}>
           You can now sign in with your email and password.
@@ -257,15 +263,16 @@ function RegisterForm({ onSwitch }) {
   return (
     <>
       <div className="login-card-header">
-        <div className="login-card-icon">📝</div>
+        <div className="login-card-icon">
+          <IconUserPlus size={22} color="var(--rw-green)" />
+        </div>
         <div>
           <div className="login-card-title">Create Account</div>
-          <div className="login-card-sub">Government staff & researchers</div>
+          <div className="login-card-sub">Government staff &amp; researchers</div>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="login-form">
-
         <div className="login-field">
           <label htmlFor="reg-name">Full Name</label>
           <input id="reg-name" type="text" placeholder="Your full name"
@@ -323,11 +330,17 @@ function RegisterForm({ onSwitch }) {
         </div>
 
         {error && (
-          <div className="login-error"><span>⚠</span> {error}</div>
+          <div className="login-error" style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <IconAlertTriangle size={14} style={{ flexShrink: 0 }} />
+            <span>{error}</span>
+          </div>
         )}
 
         <button type="submit" className="login-btn" disabled={loading}>
-          {loading ? <><span className="login-spinner" /> Creating account…</> : 'Create Account →'}
+          {loading
+            ? <><span className="login-spinner" /> Creating account…</>
+            : 'Create Account →'
+          }
         </button>
       </form>
 
@@ -344,15 +357,14 @@ function RegisterForm({ onSwitch }) {
   )
 }
 
-// ── Main page ──────────────────────────────────────────────────────────────
-
+/* ── Main landing page ─────────────────────────────────────────────────────────── */
 export default function LandingPage() {
   const [mode, setMode] = useState('login')  // 'login' | 'register'
 
   return (
     <div className="landing-root">
 
-      {/* ── Top nav bar ── */}
+      {/* Top nav bar */}
       <header className="landing-nav">
         <div className="landing-nav-brand">
           <div className="landing-brand-mark">SL</div>
@@ -362,11 +374,14 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="landing-nav-right">
-          <span className="landing-badge">MINALOC · RISA · CBC Team - Hackathon</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <IconShield size={13} color="rgba(255,255,255,0.6)" />
+            <span className="landing-badge">Gov platform</span>
+          </div>
         </div>
       </header>
 
-      {/* ── Hero ── */}
+      {/* Hero */}
       <section className="landing-hero">
         <div className="landing-hero-inner">
 
@@ -400,20 +415,23 @@ export default function LandingPage() {
                 display: 'flex', borderBottom: '1px solid var(--gray-100)',
                 marginBottom: 20, gap: 0,
               }}>
-                {['login', 'register'].map(m => (
+                {[
+                  { key: 'login',    label: 'Sign In'  },
+                  { key: 'register', label: 'Register' },
+                ].map(({ key, label }) => (
                   <button
-                    key={m}
+                    key={key}
                     type="button"
-                    onClick={() => setMode(m)}
+                    onClick={() => setMode(key)}
                     style={{
                       flex: 1, padding: '10px 0', border: 'none', background: 'none',
-                      cursor: 'pointer', fontSize: 13, fontWeight: mode === m ? 700 : 400,
-                      color: mode === m ? 'var(--black)' : 'var(--gray-400)',
-                      borderBottom: mode === m ? '2px solid var(--rw-green)' : '2px solid transparent',
+                      cursor: 'pointer', fontSize: 13, fontWeight: mode === key ? 700 : 400,
+                      color: mode === key ? 'var(--black)' : 'var(--gray-400)',
+                      borderBottom: mode === key ? '2px solid var(--rw-green)' : '2px solid transparent',
                       marginBottom: -1,
                     }}
                   >
-                    {m === 'login' ? 'Sign In' : 'Register'}
+                    {label}
                   </button>
                 ))}
               </div>
@@ -427,11 +445,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Stats strip ── */}
+      {/* Stats strip */}
       <section className="landing-stats">
         {STATS.map(s => (
           <div key={s.label} className="landing-stat-card">
-            <div className="stat-icon">{s.icon}</div>
+            <div className="stat-icon">
+              <s.Icon size={20} color="var(--rw-green)" />
+            </div>
             <div className="stat-value">{s.value}</div>
             <div className="stat-label">{s.label}</div>
             <div className="stat-sub">{s.sub}</div>
@@ -439,14 +459,16 @@ export default function LandingPage() {
         ))}
       </section>
 
-      {/* ── Feature cards ── */}
+      {/* Feature cards */}
       <section className="landing-features">
         <div className="landing-section-label">Platform Capabilities</div>
         <h2 className="landing-h2">Everything decision-makers need</h2>
         <div className="landing-feature-grid">
           {FEATURES.map(f => (
             <div key={f.title} className="landing-feature-card">
-              <div className="feature-icon">{f.icon}</div>
+              <div className="feature-icon">
+                <f.Icon size={22} color="var(--rw-green)" />
+              </div>
               <div className="feature-title">{f.title}</div>
               <div className="feature-desc">{f.desc}</div>
             </div>
@@ -454,13 +476,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Footer ── */}
+      {/* Footer */}
       <footer className="landing-footer">
         <div className="landing-footer-inner">
           <div>
-            <div className="landing-footer-brand">SLDS — Sector-Level Development Simulator</div>
+            <div className="landing-footer-brand">Sector-Level Development Simulator</div>
             <div className="landing-footer-sub">
-              Built by CBC Team - Hackathon · In partnership with MINALOC & RISA · Rwanda 2026
+              Gov platform· Rwanda 2026
             </div>
           </div>
           <div className="landing-footer-badges">

@@ -9,4 +9,9 @@ export default defineConfig({
       '/api': 'http://localhost:8000',
     },
   },
+  // ── Vitest configuration ──────────────────────────────────────
+  test: {
+    environment: 'jsdom',   // simulate browser DOM for React components
+    globals: true,          // no need to import describe/it/expect manually
+  },
 })

@@ -73,10 +73,10 @@ export const DEMO_USERS = [
 ]
 
 export const ROLE_META = {
-  national_admin:   { label: 'National Admin',   color: '#09090b', bg: '#f4f4f5', dot: '#09090b', accent: '#09090b' },
-  district_officer: { label: 'District Officer', color: '#1e40af', bg: '#eff6ff', dot: '#3b82f6', accent: '#2563eb' },
-  sector_officer:   { label: 'Sector Officer',   color: '#166534', bg: '#f0fdf4', dot: '#00A550', accent: '#00A550' },
-  analyst:          { label: 'Policy Analyst',   color: '#6d28d9', bg: '#f5f3ff', dot: '#7c3aed', accent: '#7c3aed' },
+  national_admin:   { label: 'Ministry Officer',  color: '#1e3a5f', bg: '#eff6ff', dot: '#1d4ed8', accent: '#1d4ed8' },
+  district_officer: { label: 'District Officer',  color: '#1e40af', bg: '#eff6ff', dot: '#3b82f6', accent: '#2563eb' },
+  sector_officer:   { label: 'Sector Officer',    color: '#166534', bg: '#f0fdf4', dot: '#00A550', accent: '#00A550' },
+  analyst:          { label: 'Policy Analyst',    color: '#6d28d9', bg: '#f5f3ff', dot: '#7c3aed', accent: '#7c3aed' },
 }
 
 // ---------------------------------------------------------------------------
