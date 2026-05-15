@@ -11,6 +11,7 @@ import DistrictPlanner  from './pages/DistrictPlanner'
 import SectorPlanner    from './pages/SectorPlanner'
 import Simulation       from './pages/Simulation'
 import UserManagement   from './pages/UserManagement'
+import Settings         from './pages/Settings'
 
 /**
  * Guards a route by allowed roles.
@@ -82,6 +83,9 @@ function AppRoutes() {
               </RoleRoute>
             }
           />
+
+          {/* Profile settings — all authenticated users */}
+          <Route path="settings" element={<Settings />} />
         </Route>
 
         {/* ── Catch-all ── */}

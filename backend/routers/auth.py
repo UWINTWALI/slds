@@ -19,6 +19,7 @@ from schemas.auth import (
     RegisterRequest,
     TokenResponse,
     UserResponse,
+    ProfileUpdate,
 )
 from services.auth_service import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
@@ -28,6 +29,10 @@ from services.auth_service import (
     hash_password,
     verify_password,
 )
+from models.user import EmailChangeRequest, AuditLog
+from sqlalchemy import select
+import uuid
+from datetime import datetime
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -44,6 +49,7 @@ def _user_to_response(user: User) -> UserResponse:
         title=user.title,
         district=user.district,
         sector=user.sector,
+        ministry=user.ministry,
         roles=[ur.role.name for ur in user.user_roles],
         is_active=user.is_active,
     )
@@ -134,6 +140,84 @@ async def me(
     current_user: User = Depends(get_current_user),
 ) -> UserResponse:
     """Return the profile of the authenticated user."""
+    return _user_to_response(current_user)
+
+
+@router.patch("/me", status_code=status.HTTP_200_OK)
+async def update_me(
+    body: ProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> MessageResponse | UserResponse:
+    """Update the profile of the authenticated user.
+
+    - National admins may change their email immediately.
+    - District and sector officers may request an email change; this creates
+      a pending EmailChangeRequest and disables the account until an admin
+      approves the change.
+    """
+    update_data = body.model_dump(exclude_unset=True)
+
+    # Handle email change specially
+    if "email" in update_data:
+        new_email = update_data.pop("email")
+
+        # Reject duplicate email owned by someone else
+        existing = await db.execute(select(User).where(User.email == new_email))
+        existing_user = existing.scalar_one_or_none()
+        if existing_user is not None and existing_user.id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="An account with this email already exists.",
+            )
+
+        roles = [ur.role.name for ur in current_user.user_roles]
+        if "national_admin" in roles:
+            current_user.email = new_email
+            # Audit
+            db.add(
+                AuditLog(
+                    user_id=current_user.id,
+                    action="email_changed",
+                    resource="users",
+                    resource_id=str(current_user.id),
+                    details={"new_email": new_email},
+                )
+            )
+        elif any(r in ("district_officer", "sector_officer") for r in roles):
+            # Create a pending request and deactivate the user until approval
+            req = EmailChangeRequest(
+                id=uuid.uuid4(),
+                user_id=current_user.id,
+                new_email=new_email,
+                status="pending",
+                requested_by=current_user.id,
+            )
+            db.add(req)
+            current_user.is_active = False
+            db.add(
+                AuditLog(
+                    user_id=current_user.id,
+                    action="email_change_requested",
+                    resource="email_change_requests",
+                    resource_id=str(req.id),
+                    details={"new_email": new_email},
+                )
+            )
+            # Apply other update fields even when email change is pending
+            for field, value in update_data.items():
+                setattr(current_user, field, value)
+            await db.flush()
+            return MessageResponse(message="Email change request submitted and awaiting admin approval")
+        else:
+            # Other roles: allow direct change
+            current_user.email = new_email
+
+    # Apply remaining profile updates
+    for field, value in update_data.items():
+        setattr(current_user, field, value)
+
+    await db.flush()
     return _user_to_response(current_user)
 
 

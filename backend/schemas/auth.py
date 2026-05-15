@@ -19,6 +19,7 @@ class UserResponse(BaseModel):
     title: Optional[str] = None
     district: Optional[str] = None
     sector: Optional[str] = None
+    ministry: Optional[str] = None
     roles: List[str]
     is_active: bool
 
@@ -39,6 +40,7 @@ class UserCreate(BaseModel):
     title: Optional[str] = None
     district: Optional[str] = None
     sector: Optional[str] = None
+    ministry: Optional[str] = None
     roles: List[str] = []
 
     @field_validator("password")
@@ -54,7 +56,32 @@ class UserUpdate(BaseModel):
     title: Optional[str] = None
     district: Optional[str] = None
     sector: Optional[str] = None
+    ministry: Optional[str] = None
     is_active: Optional[bool] = None
+
+
+class ProfileUpdate(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    title: Optional[str] = None
+    district: Optional[str] = None
+    sector: Optional[str] = None
+    ministry: Optional[str] = None
+
+
+class EmailChangeRequestResponse(BaseModel):
+    id: str
+    user_id: str
+    user_full_name: Optional[str] = None
+    current_email: Optional[EmailStr] = None
+    new_email: EmailStr
+    status: str
+    requested_by: Optional[str] = None
+    requested_at: Optional[str] = None
+    processed_by: Optional[str] = None
+    processed_at: Optional[str] = None
+
+    model_config = {"from_attributes": True}
 
 
 class RoleAssign(BaseModel):

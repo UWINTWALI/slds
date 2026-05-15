@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import logo from '../logo/slds_logo.png'
 import { useAuth, DEMO_USERS, ROLE_META } from '../context/AuthContext'
 import { getDistricts, getSectorList } from '../api/client'
 import {
@@ -7,7 +8,7 @@ import {
   IconTarget, IconLock, IconUserPlus, IconShield, IconAlertTriangle, IconCheckCircle,
 } from '../components/Icons'
 
-/* ── Stats strip data ─────────────────────────────────────────────────────────── */
+/* Stats strip data  */
 const STATS = [
   { value: '416',   label: 'Sectors Monitored',  Icon: IconMapPin,  sub: 'Across all 5 provinces'          },
   { value: '30',    label: 'Districts Covered',    Icon: IconMap,     sub: 'Full national coverage'          },
@@ -17,7 +18,7 @@ const STATS = [
   { value: '2026',  label: 'Baseline Year',         Icon: IconTarget,  sub: 'Rwanda Vision 2050 aligned'     },
 ]
 
-/* ── Feature cards data ────────────────────────────────────────────────────────── */
+/* Feature cards data  */
 const FEATURES = [
   {
     Icon: IconGlobe,
@@ -47,7 +48,7 @@ const REGISTERABLE_ROLES = [
   { value: 'analyst',          label: 'Policy Analyst'   },
 ]
 
-/* ── Login form ────────────────────────────────────────────────────────────────── */
+/* ── Login form  */
 function LoginForm({ onSwitch }) {
   const { login }  = useAuth()
   const navigate   = useNavigate()
@@ -179,7 +180,7 @@ function LoginForm({ onSwitch }) {
   )
 }
 
-/* ── Register form ─────────────────────────────────────────────────────────────── */
+/* ── Register form  */
 function RegisterForm({ onSwitch }) {
   const { register } = useAuth()
   const navigate     = useNavigate()
@@ -357,9 +358,13 @@ function RegisterForm({ onSwitch }) {
   )
 }
 
-/* ── Main landing page ─────────────────────────────────────────────────────────── */
+/* ── Main landing page  */
 export default function LandingPage() {
   const [mode, setMode] = useState('login')  // 'login' | 'register'
+
+  useEffect(() => {
+    document.title = 'Home · Sector-Level Development Simulator'
+  }, [])
 
   return (
     <div className="landing-root">
@@ -367,9 +372,11 @@ export default function LandingPage() {
       {/* Top nav bar */}
       <header className="landing-nav">
         <div className="landing-nav-brand">
-          <div className="landing-brand-mark">SL</div>
+          <div className="landing-brand-mark">
+            <img src={logo} alt="SLDS logo" />
+          </div>
           <div>
-            <div className="landing-brand-name">SLDS</div>
+            <div className="landing-brand-name">Home</div>
             <div className="landing-brand-sub">Sector-Level Development Simulator</div>
           </div>
         </div>

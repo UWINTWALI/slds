@@ -1,24 +1,25 @@
 ﻿import { useState, useCallback } from 'react'
+import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
-import { getUsers, deactivateUser, activateUser, assignRole, revokeRole } from '../api/client'
+import { getUsers, deactivateUser, deleteUser, activateUser, assignRole, revokeRole, getEmailChangeRequests, approveEmailChangeRequest, denyEmailChangeRequest } from '../api/client'
 
 const ALL_ROLES = ['national_admin', 'district_officer', 'sector_officer', 'analyst']
 
 const ROLE_META = {
-  national_admin:   { label: 'National Admin',   color: '#09090b', bg: '#f4f4f5', dot: '#09090b' },
+  national_admin:   { label: 'Ministry Office',   color: '#09090b', bg: '#f4f4f5', dot: '#09090b' },
   district_officer: { label: 'District Officer', color: '#1e40af', bg: '#eff6ff', dot: '#3b82f6' },
   sector_officer:   { label: 'Sector Officer',   color: '#166534', bg: '#f0fdf4', dot: '#00A550' },
   analyst:          { label: 'Policy Analyst',   color: '#6d28d9', bg: '#f5f3ff', dot: '#7c3aed' },
 }
 
 function RoleBadge({ role, onRevoke, busy }) {
-  const m = ROLE_META[role] ?? { label: role, color: '#333', bg: '#f0f0f0', dot: '#888' }
+  const m = ROLE_META[role] ?? { label: role, dot: '#888' }
   return (
     <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 4,
-      padding: '2px 8px', borderRadius: 4,
-      background: m.bg, border: `1px solid ${m.dot}30`,
-      fontSize: 11, fontWeight: 600, color: m.color,
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      padding: '4px 10px', borderRadius: 999,
+      background: '#f8fafc', border: '1px solid #d1d5db',
+      fontSize: 11, fontWeight: 600, color: '#111',
     }}>
       <span style={{ width: 6, height: 6, borderRadius: '50%', background: m.dot, flexShrink: 0 }} />
       {m.label}
@@ -29,48 +30,61 @@ function RoleBadge({ role, onRevoke, busy }) {
           title={`Revoke ${m.label}`}
           style={{
             background: 'none', border: 'none', cursor: busy ? 'not-allowed' : 'pointer',
-            color: m.color, opacity: busy ? 0.3 : 0.6,
-            padding: '0 0 0 2px', fontSize: 13, lineHeight: 1, fontWeight: 700,
+            color: '#555', opacity: busy ? 0.3 : 0.8,
+            padding: '0 0 0 4px', fontSize: 12, lineHeight: 1, fontWeight: 700,
           }}
-        >Ã—</button>
+        >×</button>
       )}
     </span>
   )
 }
 
 export default function UserManagement() {
-  const [version, setVersion]       = useState(0)
+  const { user: currentUser } = useAuth()
+  
+  // Version state for refreshing data
+  const [version, setVersion] = useState(0)
   const refresh = useCallback(() => setVersion(v => v + 1), [])
 
+  // This will automatically refetch when version changes
   const { data: users, loading, error } = useApi(getUsers, [version])
+  const { data: requests, loading: loadingRequests, error: requestError, refetch: refreshRequests } = useApi(getEmailChangeRequests, [version])
 
-  const [busy,         setBusy]         = useState('')   // '<userId>_<action>'
+  const [busy, setBusy] = useState('')   // '<userId>_<action>'
   const [flashSuccess, setFlashSuccess] = useState('')   // user id that just succeeded
-  const [globalError,  setGlobalError]  = useState('')
-  const [assigningFor, setAssigningFor] = useState(null) // user id whose assign panel is open
-  const [newRole,      setNewRole]      = useState('district_officer')
+  const [globalError, setGlobalError] = useState('')
 
-  function startBusy(key)  { setBusy(key);  setGlobalError('') }
-  function clearBusy()     { setBusy('') }
+  function startBusy(key) { 
+    setBusy(key);  
+    setGlobalError('') 
+  }
+  
+  function clearBusy() { 
+    setBusy('') 
+  }
 
   function flash(userId) {
     setFlashSuccess(userId)
     setTimeout(() => setFlashSuccess(u => u === userId ? '' : u), 2000)
   }
 
+  // Handle activate/deactivate user
   async function handleToggleActive(user) {
-    const action = user.is_active ? 'deactivate' : 'activate'
-    const label  = user.is_active ? 'Deactivate' : 'Activate'
+    const label = user.is_active ? 'Deactivate' : 'Activate'
+    
     if (user.is_active && !window.confirm(
       `Deactivate ${user.full_name}? They will not be able to sign in until re-activated.`
     )) return
 
     startBusy(`${user.id}_status`)
     try {
-      if (user.is_active) await deactivateUser(user.id)
-      else                await activateUser(user.id)
+      if (user.is_active) {
+        await deactivateUser(user.id)
+      } else {
+        await activateUser(user.id)
+      }
       flash(user.id)
-      refresh()
+      window.location.reload() // ✅ Refresh after activate/deactivate
     } catch (e) {
       setGlobalError(e?.response?.data?.detail ?? `${label} failed.`)
     } finally {
@@ -78,13 +92,31 @@ export default function UserManagement() {
     }
   }
 
-  async function handleAssign(userId) {
+  // Handle delete user
+  async function handleDelete(user) {
+    if (!window.confirm(
+      `Delete ${user.full_name}? This will delete the account permanently.`
+    )) return
+
+    startBusy(`${user.id}_delete`)
+    try {
+      await deleteUser(user.id)
+      flash(user.id)
+      window.location.reload() // ✅ Refresh after delete
+    } catch (e) {
+      setGlobalError(e?.response?.data?.detail ?? 'Delete failed.')
+    } finally {
+      clearBusy()
+    }
+  }
+
+  // Handle assign role
+  async function handleAssign(userId, role) {
     startBusy(`${userId}_assign`)
     try {
-      await assignRole(userId, newRole)
-      setAssigningFor(null)
+      await assignRole(userId, role)
       flash(userId)
-      refresh()
+      window.location.reload() // ✅ Refresh after role assignment
     } catch (e) {
       setGlobalError(e?.response?.data?.detail ?? 'Role assignment failed.')
     } finally {
@@ -92,12 +124,13 @@ export default function UserManagement() {
     }
   }
 
+  // Handle revoke role
   async function handleRevoke(userId, role) {
     startBusy(`${userId}_${role}`)
     try {
       await revokeRole(userId, role)
       flash(userId)
-      refresh()
+      window.location.reload() // ✅ Refresh after role revocation
     } catch (e) {
       setGlobalError(e?.response?.data?.detail ?? 'Role revoke failed.')
     } finally {
@@ -105,24 +138,67 @@ export default function UserManagement() {
     }
   }
 
-  // â”€â”€ Loading / error states â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  async function handleApproveRequest(requestId) {
+    startBusy(`req_${requestId}`)
+    try {
+      await approveEmailChangeRequest(requestId)
+      setGlobalError('')
+      refresh()
+      refreshRequests()
+    } catch (e) {
+      setGlobalError(e?.response?.data?.detail ?? 'Approve failed.')
+    } finally {
+      clearBusy()
+    }
+  }
 
-  if (loading) return <div className="loading"><div className="spinner" />Loading usersâ€¦</div>
+  async function handleDenyRequest(requestId) {
+    startBusy(`req_${requestId}`)
+    try {
+      await denyEmailChangeRequest(requestId)
+      setGlobalError('')
+      refresh()
+      refreshRequests()
+    } catch (e) {
+      setGlobalError(e?.response?.data?.detail ?? 'Deny failed.')
+    } finally {
+      clearBusy()
+    }
+  }
 
+  // Main action handler for the actions dropdown
+  async function handleUserAction(user, action) {
+    if (!action || action === '') return
+
+    if (action === 'activate' || action === 'deactivate') {
+      return handleToggleActive(user)
+    }
+
+    if (action === 'delete') {
+      return handleDelete(user)
+    }
+  }
+
+  // Loading state
+  if (loading) {
+    return <div className="loading"><div className="spinner" />Loading users…</div>
+  }
+
+  // Error state
   if (error) {
     const s = error?.response?.status
     const msg = s === 401
-      ? 'No valid session token â€” sign out and sign back in with the backend running.'
+      ? 'No valid session token — sign out and sign back in with the backend running.'
       : s === 403
       ? 'Your account does not have the national_admin role. Run seed_users.py.'
       : 'Cannot reach the backend. Make sure uvicorn is running on port 8000.'
-    return <div className="alert alert-danger">âš  {msg}</div>
+    return <div className="alert alert-danger">Error: {msg}</div>
   }
 
-  const active   = users?.filter(u =>  u.is_active) ?? []
+  const active = users?.filter(u => u.is_active) ?? []
   const inactive = users?.filter(u => !u.is_active) ?? []
 
-  // â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  const pendingRequests = requests?.filter(r => r.status === 'pending') ?? []
 
   return (
     <div className="gap-16">
@@ -151,11 +227,75 @@ export default function UserManagement() {
         ))}
       </div>
 
+      {/* Global error display */}
       {globalError && (
         <div className="alert alert-danger" style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-          <span>âš  {globalError}</span>
-          <button onClick={() => setGlobalError('')}
-            style={{ background:'none', border:'none', cursor:'pointer', fontWeight:700, fontSize:16 }}>Ã—</button>
+          <span>Error: {globalError}</span>
+          <button 
+            onClick={() => setGlobalError('')}
+            style={{ background:'none', border:'none', cursor:'pointer', fontWeight:700, fontSize:16 }}
+          >×</button>
+        </div>
+      )}
+
+      {(pendingRequests.length > 0 || requestError) && (
+        <div className="card" style={{ borderColor: '#fde68a' }}>
+          <div className="card-title">Pending Email Change Requests</div>
+          {requestError ? (
+            <div className="alert alert-danger">Failed to load requests: {requestError}</div>
+          ) : loadingRequests ? (
+            <div className="loading"><div className="spinner" />Loading requests…</div>
+          ) : (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Current email</th>
+                    <th>Requested email</th>
+                    <th>Requested at</th>
+                    <th style={{ width: 150 }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingRequests.map(req => {
+                    const isBusy = busy === `req_${req.id}`
+                    return (
+                      <tr key={req.id} style={{ opacity: isBusy ? 0.6 : 1 }}>
+                        <td style={{ fontSize: 12, color: '#374151' }}>
+                          {req.user_full_name || req.user_id}
+                        </td>
+                        <td style={{ fontSize: 12, color: '#6b7280' }}>
+                          {req.current_email || '—'}
+                        </td>
+                        <td style={{ fontSize: 12, color: '#111' }}>{req.new_email}</td>
+                        <td style={{ fontSize: 12, color: '#6b7280' }}>{new Date(req.requested_at).toLocaleString()}</td>
+                        <td style={{ display: 'flex', gap: 8 }}>
+                          <button
+                            type="button"
+                            disabled={isBusy}
+                            onClick={() => handleApproveRequest(req.id)}
+                            className="btn btn-sm btn-success"
+                          >Approve</button>
+                          <button
+                            type="button"
+                            disabled={isBusy}
+                            onClick={() => handleDenyRequest(req.id)}
+                            className="btn btn-sm btn-secondary"
+                          >Deny</button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+              {pendingRequests.length === 0 && (
+                <div style={{ padding: '14px 16px', color: 'var(--gray-500)' }}>
+                  No pending email change requests at this time.
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -176,9 +316,9 @@ export default function UserManagement() {
             </thead>
             <tbody>
               {users?.map(user => {
-                const isBusy     = busy.startsWith(user.id)
+                const isBusy = busy.startsWith(user.id)
                 const didSucceed = flashSuccess === user.id
-                const available  = ALL_ROLES.filter(r => !user.roles.includes(r))
+                const available = ALL_ROLES.filter(r => !user.roles.includes(r))
 
                 return (
                   <tr key={user.id} style={{
@@ -186,7 +326,6 @@ export default function UserManagement() {
                     background: didSucceed ? '#f0fdf4' : undefined,
                     transition: 'background 0.4s',
                   }}>
-
                     {/* Name */}
                     <td>
                       <div style={{ fontWeight: 600, fontSize: 13 }}>{user.full_name}</div>
@@ -202,7 +341,7 @@ export default function UserManagement() {
                     <td style={{ fontSize: 12 }}>
                       {user.district
                         ? <>{user.district}{user.sector && <span style={{ color: 'var(--gray-400)' }}> / {user.sector}</span>}</>
-                        : <span style={{ color: 'var(--gray-300)' }}>â€”</span>
+                        : <span style={{ color: 'var(--gray-300)' }}>—</span>
                       }
                     </td>
 
@@ -222,86 +361,66 @@ export default function UserManagement() {
                         }
                       </div>
 
-                      {/* Assign-role panel */}
-                      {assigningFor === user.id ? (
-                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4 }}>
-                          <select
-                            value={newRole}
-                            onChange={e => setNewRole(e.target.value)}
-                            style={{ fontSize: 11, padding: '3px 6px', width: 'auto' }}
-                          >
-                            {available.map(r => (
-                              <option key={r} value={r}>{ROLE_META[r]?.label ?? r}</option>
-                            ))}
-                          </select>
-                          <button
-                            className="btn btn-primary"
-                            style={{ fontSize: 11, padding: '3px 10px' }}
-                            disabled={busy === `${user.id}_assign`}
-                            onClick={() => handleAssign(user.id)}
-                          >
-                            {busy === `${user.id}_assign` ? 'â€¦' : 'Save'}
-                          </button>
-                          <button
-                            className="btn btn-secondary"
-                            style={{ fontSize: 11, padding: '3px 8px' }}
-                            onClick={() => setAssigningFor(null)}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        available.length > 0 && user.is_active && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setNewRole(available[0])
-                              setAssigningFor(user.id)
-                            }}
-                            style={{
-                              background: 'none', border: 'none',
-                              color: 'var(--rw-green)', fontSize: 11,
-                              cursor: 'pointer', padding: 0, fontWeight: 600,
-                            }}
-                          >
-                            + Add role
-                          </button>
-                        )
+                      {/* Add-role dropdown - only for active users */}
+                      {available.length > 0 && user.is_active && (
+                        <select
+                          defaultValue=""
+                          onChange={e => {
+                            const role = e.target.value
+                            e.target.value = ''
+                            if (role) handleAssign(user.id, role)
+                          }}
+                          disabled={busy === `${user.id}_assign`}
+                          style={{
+                            fontSize: 11, padding: '4px 8px', marginTop: 4,
+                            borderRadius: 6, border: '1px solid #d1d5db',
+                            background: '#fff', color: '#111',
+                            cursor: busy === `${user.id}_assign` ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          <option value="">+ Add role</option>
+                          {available.map(r => (
+                            <option key={r} value={r}>{ROLE_META[r]?.label ?? r}</option>
+                          ))}
+                        </select>
                       )}
                     </td>
 
                     {/* Status */}
                     <td>
                       <span style={{
-                        fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 4,
-                        background: user.is_active ? '#f0fdf4' : '#fef2f2',
-                        color:      user.is_active ? '#16a34a' : '#dc2626',
-                        border:     user.is_active ? '1px solid #bbf7d0' : '1px solid #fecaca',
+                        fontSize: 11, fontWeight: 600, padding: '5px 10px', borderRadius: 999,
+                        background: '#f8fafc', color: '#111', border: '1px solid #d1d5db',
                       }}>
                         {user.is_active ? 'Active' : 'Deactivated'}
                       </span>
                     </td>
 
-                    {/* Actions */}
-                    <td>
-                      <button
-                        className="btn btn-secondary"
-                        style={{
-                          fontSize: 11, padding: '4px 12px',
-                          color:       user.is_active ? '#dc2626' : '#16a34a',
-                          borderColor: user.is_active ? '#fca5a5' : '#86efac',
-                          opacity: isBusy ? 0.5 : 1,
+                    {/* Actions dropdown */}
+                    <td style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      <select
+                        defaultValue=""
+                        onChange={e => {
+                          const action = e.target.value
+                          e.target.value = ''
+                          handleUserAction(user, action)
                         }}
-                        disabled={busy === `${user.id}_status`}
-                        onClick={() => handleToggleActive(user)}
+                        disabled={busy.startsWith(user.id)}
+                        style={{
+                          width: '100%', fontSize: 12, padding: '8px 10px',
+                          borderRadius: 8, border: '1px solid #d1d5db',
+                          background: '#fff', color: '#111',
+                          cursor: busy.startsWith(user.id) ? 'not-allowed' : 'pointer',
+                        }}
                       >
-                        {busy === `${user.id}_status`
-                          ? 'â€¦'
-                          : user.is_active ? 'Deactivate' : 'Activate'
+                        <option value="" disabled>Actions</option>
+                        {user.is_active
+                          ? <option value="deactivate">Deactivate</option>
+                          : <option value="activate">Activate</option>
                         }
-                      </button>
+                        <option value="delete" disabled={currentUser?.id === user.id}>Delete</option>
+                      </select>
                     </td>
-
                   </tr>
                 )
               })}
@@ -309,7 +428,6 @@ export default function UserManagement() {
           </table>
         </div>
       </div>
-
     </div>
   )
 }

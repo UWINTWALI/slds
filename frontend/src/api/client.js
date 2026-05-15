@@ -32,10 +32,14 @@ export const getSectorList       = (district)    => api.get('/sectors', { params
 // ── User management (national_admin only) ────────────────────────────────────
 // Trailing slashes avoid FastAPI's 307 redirect which strips the Auth header
 export const getUsers      = ()              => api.get('/users/').then(r => r.data)
-export const deactivateUser = (id)           => api.delete(`/users/${id}`).then(r => r.data)
+export const deactivateUser = (id)           => api.patch(`/users/${id}`, { is_active: false }).then(r => r.data)
+export const deleteUser     = (id)           => api.delete(`/users/${id}`).then(r => r.data)
 export const activateUser   = (id)           => api.patch(`/users/${id}`, { is_active: true }).then(r => r.data)
 export const assignRole     = (id, role_name) => api.post(`/users/${id}/roles`, { role_name }).then(r => r.data)
 export const revokeRole     = (id, role_name) => api.delete(`/users/${id}/roles/${role_name}`).then(r => r.data)
+export const getEmailChangeRequests = ()      => api.get('/users/email-change-requests').then(r => r.data)
+export const approveEmailChangeRequest = (id) => api.post(`/users/email-change-requests/${id}/approve`).then(r => r.data)
+export const denyEmailChangeRequest = (id)    => api.post(`/users/email-change-requests/${id}/deny`).then(r => r.data)
 
 // ── AI Assistant ──────────────────────────────────────────────────────────────
 export const askAssistant = (messages) =>

@@ -1,13 +1,15 @@
+import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth, ROLE_META } from '../context/AuthContext'
 import { useRole }            from '../hooks/useRole'
 import { useTheme }           from '../context/ThemeContext'
+import logo from '../logo/slds_logo.png'
 import {
   IconHome, IconGlobe, IconMap, IconMapPin,
-  IconFlask, IconUsers, IconLogOut, IconSun, IconMoon,
+  IconFlask, IconUsers, IconSettings, IconLogOut, IconSun, IconMoon,
 } from './Icons'
 
-/* ── Role-specific navigation ───────────────────────────────────────────────── */
+/* ── Role-specific navigation  */
 const ROLE_NAV = {
   national_admin: [
     { to: '/',           Icon: IconHome,    label: 'Operations Center' },
@@ -15,17 +17,20 @@ const ROLE_NAV = {
     { to: '/district',   Icon: IconMap,     label: 'District Reports' },
     { to: '/simulation', Icon: IconFlask,   label: 'Simulation' },
     { to: '/users',      Icon: IconUsers,   label: 'User Management' },
+    { to: '/settings',   Icon: IconSettings, label: 'Settings' },
   ],
   district_officer: [
     { to: '/',           Icon: IconHome,    label: 'District Center' },
     { to: '/district',   Icon: IconMap,     label: 'District Overview' },
     { to: '/sector',     Icon: IconMapPin,  label: 'Sector Reports' },
     { to: '/simulation', Icon: IconFlask,   label: 'Simulation' },
+    { to: '/settings',   Icon: IconSettings, label: 'Settings' },
   ],
   sector_officer: [
     { to: '/',           Icon: IconHome,    label: 'Sector Dashboard' },
     { to: '/sector',     Icon: IconMapPin,  label: 'My Sector' },
     { to: '/simulation', Icon: IconFlask,   label: 'Simulate Investment' },
+    { to: '/settings',   Icon: IconSettings, label: 'Settings' },
   ],
   analyst: [
     { to: '/',           Icon: IconHome,    label: 'Research Center' },
@@ -33,10 +38,11 @@ const ROLE_NAV = {
     { to: '/district',   Icon: IconMap,     label: 'District Planner' },
     { to: '/sector',     Icon: IconMapPin,  label: 'Sector Planner' },
     { to: '/simulation', Icon: IconFlask,   label: 'Simulation' },
+    { to: '/settings',   Icon: IconSettings, label: 'Settings' },
   ],
 }
 
-/* ── Role section labels ───────────────────────────────────────────────────── */
+/* ── Role section labels  */
 const ROLE_SECTION = {
   national_admin:   'MINALOC / RISA',
   district_officer: 'District Administration',
@@ -50,6 +56,8 @@ export default function Layout() {
   const { role, meta }         = useRole()
   const navigate               = useNavigate()
   const { theme, toggleTheme } = useTheme()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef                = useRef(null)
 
   const nav = ROLE_NAV[role] ?? ROLE_NAV.analyst
 
@@ -58,90 +66,107 @@ export default function Layout() {
   const current = allNavFlat.find(n => n.to !== '/' && pathname.startsWith(n.to))
              || allNavFlat.find(n => n.to === pathname)
 
+  useEffect(() => {
+    const title = current?.label ?? 'Dashboard'
+    document.title = `${title} · Sector-Level Development Simulator`
+  }, [current?.label])
+
+  useEffect(() => {
+    if (!menuOpen) return
+    function handleOutsideClick(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false)
+      }
+    }
+    window.addEventListener('mousedown', handleOutsideClick)
+    return () => window.removeEventListener('mousedown', handleOutsideClick)
+  }, [menuOpen])
+
+  useEffect(() => {
+    setMenuOpen(false)
+  }, [pathname])
+
   function handleLogout() {
     logout()
     navigate('/login', { replace: true })
   }
 
+  function goToSettings() {
+    navigate('/settings')
+    setMenuOpen(false)
+  }
+
   return (
     <div className="app-shell">
       {/* ── Sidebar ── */}
-      <aside className="sidebar">
+      <aside className="sidebar" style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
 
-        {/* Logo */}
-        <div className="sidebar-logo">
-          <div className="sidebar-logo-mark" style={{ background: meta.accent }}>SL</div>
-          <div>
-            <div className="sidebar-logo-text">SLDS</div>
-            <div className="sidebar-logo-sub">Rwanda · 2026</div>
-          </div>
-        </div>
-
-        {/* Role badge */}
-        <div className="sidebar-role-badge" style={{ background: meta.bg, borderColor: meta.dot + '33' }}>
-          <span className="role-dot" style={{ background: meta.dot }} />
-          <div style={{ minWidth: 0 }}>
-            <div style={{ color: meta.color, fontWeight: 700, fontSize: 11, lineHeight: 1.3 }}>{meta.label}</div>
-            {user?.district && (
-              <div style={{ color: meta.color, opacity: 0.65, fontSize: 10, lineHeight: 1.3 }}>
-                {user.district}{user.sector ? ` / ${user.sector}` : ''}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="sidebar-nav">
-          <div className="nav-section-label">{ROLE_SECTION[role] ?? 'Navigation'}</div>
-          {nav.map(({ to, Icon, label }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/'}
-              className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}
-              style={({ isActive }) => isActive ? { borderRightColor: meta.accent } : {}}
-            >
-              <Icon size={16} />
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-
-        {/* Spacer */}
-        <div style={{ flex: 1 }} />
-
-        {/* User info */}
-        {user && (
-          <div className="sidebar-user">
-            <div className="sidebar-user-avatar" style={{ background: meta.accent }}>
-              {user.name?.charAt(0).toUpperCase() ?? 'A'}
+        {/* Top section - fixed, doesn't scroll */}
+        <div style={{ flexShrink: 0 }}>
+          {/* Logo */}
+          <div className="sidebar-logo" style={{ marginBottom: '24px' }}>
+            <div className="sidebar-logo-mark">
+              <img src={logo} alt="SLDS logo" />
             </div>
-            <div className="sidebar-user-info">
-              <div className="sidebar-user-name">{user.name}</div>
-              <div className="sidebar-user-role">{user.title ?? meta.label}</div>
+            <div>
+              <div className="sidebar-logo-text">SLDS</div>
+              <div className="sidebar-logo-sub">Rwanda · 2026</div>
             </div>
           </div>
-        )}
 
-        {/* Logout button */}
-        <button className="sidebar-logout-btn" onClick={handleLogout}>
-          <IconLogOut size={15} />
-          Logout
-        </button>
+          {/* Role badge */}
+          <div className="sidebar-role-badge" style={{ 
+            background: meta.bg, 
+            borderColor: meta.dot + '33',
+            marginBottom: '24px'
+          }}>
+            <span className="role-dot" style={{ background: meta.dot }} />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ color: meta.color, fontWeight: 700, fontSize: 11, lineHeight: 1.3 }}>{meta.label}</div>
+              {user?.district && (
+                <div style={{ color: meta.color, opacity: 0.65, fontSize: 10, lineHeight: 1.3 }}>
+                  {user.district}{user.sector ? ` / ${user.sector}` : ''}
+                </div>
+              )}
+            </div>
+          </div>
 
-        {/* Theme toggle */}
-        <button className="theme-toggle-btn" onClick={toggleTheme}>
-          {theme === 'dark'
-            ? <IconSun  size={14} />
-            : <IconMoon size={14} />
-          }
-          {theme === 'dark' ? 'Light mode' : 'Dark mode'}
-        </button>
+          {/* Navigation section label */}
+          <div className="nav-section-label" style={{ marginBottom: '12px' }}>{ROLE_SECTION[role] ?? 'Navigation'}</div>
+        </div>
 
-        <div className="sidebar-footer">
+        {/* Scrollable navigation menu */}
+        <div style={{ 
+          flex: 1, 
+          overflowY: 'auto', 
+          overflowX: 'hidden',
+          marginBottom: '16px'
+        }}>
+          <nav className="sidebar-nav">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {nav.map(({ to, Icon, label }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={to === '/'}
+                  className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}
+                  style={({ isActive }) => isActive ? { borderRightColor: meta.accent } : {}}
+                >
+                  <Icon size={16} />
+                  {label}
+                </NavLink>
+              ))}
+            </div>
+          </nav>
+        </div>
+
+        {/* Bottom section removed: user and controls now live in the top header */}
+
+        {/* Footer
+        <div className="sidebar-footer" style={{ marginTop: '10px' }}>
           Sector-Level Development<br />
           Simulator v1.0<br />
-        </div>
+        </div> */}
       </aside>
 
       {/* ── Main ── */}
@@ -150,7 +175,7 @@ export default function Layout() {
           <div>
             <div className="page-title">{current?.label ?? 'Dashboard'}</div>
             {role === 'national_admin' && (
-              <div className="page-subtitle">Ministry Operations — Full national visibility</div>
+              <div className="page-subtitle">Ministry Operations on Full national visibility</div>
             )}
             {role === 'district_officer' && user?.district && (
               <div className="page-subtitle">{user.district} District Administration</div>
@@ -163,11 +188,40 @@ export default function Layout() {
             )}
           </div>
           {user && (
-            <div className="header-user-pill" style={{ borderColor: meta.dot + '40' }}>
-              <span className="header-user-dot" style={{ background: meta.dot }} />
-              <span>{user.name}</span>
-              <span style={{ color: 'var(--gray-400)', margin: '0 4px' }}>·</span>
-              <span style={{ color: meta.color, fontWeight: 600 }}>{meta.label}</span>
+            <div className="header-actions" ref={menuRef}>
+              <button className="header-theme-btn" onClick={toggleTheme} type="button">
+                {theme === 'dark'
+                  ? <><IconSun size={16} /><span>Light</span></>
+                  : <><IconMoon size={16} /><span>Dark</span></>
+                }
+              </button>
+
+              <button
+                className="header-user-btn"
+                type="button"
+                onClick={() => setMenuOpen(open => !open)}
+                aria-expanded={menuOpen}
+              >
+                <span className="header-user-icon" style={{ background: meta.accent }}>
+                  {user.name?.charAt(0).toUpperCase() ?? 'A'}
+                </span>
+                <span className="header-user-label">
+                  <strong>{user.name}</strong>
+                  <span>{meta.label}</span>
+                </span>
+                <span className="header-user-chevron">▾</span>
+              </button>
+
+              {menuOpen && (
+                <div className="header-user-menu" role="menu">
+                  <button type="button" className="header-user-menu-item" onClick={goToSettings}>
+                    Settings
+                  </button>
+                  <button type="button" className="header-user-menu-item" onClick={handleLogout}>
+                    Logout
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

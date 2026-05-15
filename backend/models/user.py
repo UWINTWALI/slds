@@ -77,6 +77,7 @@ class User(Base):
     title: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     district: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     sector: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    ministry: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
@@ -101,6 +102,14 @@ class User(Base):
     )
     audit_logs: Mapped[List["AuditLog"]] = relationship(
         "AuditLog", back_populates="user"
+    )
+
+    # Email change requests initiated by this user
+    email_change_requests: Mapped[List["EmailChangeRequest"]] = relationship(
+        "EmailChangeRequest",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        foreign_keys="[EmailChangeRequest.user_id]",
     )
 
     def __repr__(self) -> str:
@@ -223,3 +232,36 @@ class AuditLog(Base):
 
     def __repr__(self) -> str:
         return f"<AuditLog(action={self.action!r}, resource={self.resource!r})>"
+
+
+class EmailChangeRequest(Base):
+    __tablename__ = "email_change_requests"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    new_email: Mapped[str] = mapped_column(String(256), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
+    requested_by: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    requested_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    processed_by: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    processed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    # Relationships
+    user: Mapped["User"] = relationship("User", back_populates="email_change_requests", foreign_keys=[user_id])
+    requester: Mapped[Optional["User"]] = relationship("User", foreign_keys=[requested_by])
+    processor: Mapped[Optional["User"]] = relationship("User", foreign_keys=[processed_by])
+
+    def __repr__(self) -> str:
+        return f"<EmailChangeRequest(user_id={self.user_id!r}, new_email={self.new_email!r}, status={self.status!r})>"

@@ -190,7 +190,7 @@ export default function SectorPlanner() {
 
           {/* Full-width map */}
           <div className="card">
-            <div className="card-title">District Map — {district}</div>
+            <div className="card-title">District Map: {district}</div>
             {lm
               ? <div className="loading"><div className="spinner"/>Loading map…</div>
               : <ChoroplethMap geojson={geojson} colorBy="nightlight_mean" height={420} />
@@ -214,8 +214,8 @@ export default function SectorPlanner() {
                 </RadarChart>
               </ResponsiveContainer>
               <div style={{ fontSize:11, color:'var(--gray-400)', display:'flex', gap:16 }}>
-                <span>— {sector}</span>
-                <span>— District average</span>
+                <span>-{sector}</span>
+                <span>- District average</span>
               </div>
             </div>
 
@@ -259,7 +259,7 @@ export default function SectorPlanner() {
                 : (
                   <div>
                     <div className="alert alert-info" style={{ marginBottom:12 }}>
-                      Neighbor geometry not available — showing 8 closest sectors by CDI in same district.
+                      Neighbor geometry not available - showing 8 closest sectors by CDI in same district.
                     </div>
                     <DataTable
                       rows={[

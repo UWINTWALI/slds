@@ -20,3 +20,10 @@ alembic==1.13.1
 anthropic>=0.40.0
 bcrypt>=4.0.0
 python-dotenv>=1.0.0
+
+
+
+
+
+
+# the admin should also be able to change their name and email. please make sure that the district and sector offier can change email and admin is notified the change and appeove for the account to be verfied.

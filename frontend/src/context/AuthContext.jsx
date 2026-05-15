@@ -15,10 +15,11 @@ export const DEMO_USERS = [
     email:     'admin@gmail.com',
     password:  'admin',
     role:      'national_admin',
-    name:      'National Admin',
+    name:      'Ministry Office',
     title:     'MINALOC / RISA',
     district:  null,
     sector:    null,
+    ministry:  'MINALOC',
   },
   {
     username:  'gasabo',
@@ -92,6 +93,7 @@ function sessionFromApiUser(apiUser, token) {
     title:    apiUser.title    ?? null,
     district: apiUser.district ?? null,
     sector:   apiUser.sector   ?? null,
+    ministry: apiUser.ministry ?? null,
     token,
   }
 }
@@ -109,6 +111,7 @@ function demoLogin(email, password) {
     title:    match.title,
     district: match.district,
     sector:   match.sector,
+    ministry: match.ministry ?? null,
     token:    null,
   }
 }
@@ -183,6 +186,16 @@ export function AuthProvider({ children }) {
     setUser(null)
   }, [user])
 
+  const updateProfile = useCallback((changes) => {
+    setUser((prev) => {
+      if (!prev) return prev
+      const updated = { ...prev, ...changes }
+      localStorage.setItem('slds_user', JSON.stringify(updated))
+      return updated
+    })
+    return { ok: true }
+  }, [])
+
   /**
    * Register a new non-admin user via the real API.
    * Falls back to a clear error (no demo fallback — registration must persist).
@@ -205,7 +218,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, register }}>
+    <AuthContext.Provider value={{ user, login, logout, register, updateProfile }}>
       {children}
     </AuthContext.Provider>
   )
