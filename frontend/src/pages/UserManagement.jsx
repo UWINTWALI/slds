@@ -1,4 +1,4 @@
-﻿import { useState, useCallback } from 'react'
+﻿import { useState, useCallback, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
 import { getUsers, deactivateUser, deleteUser, activateUser, assignRole, revokeRole, getEmailChangeRequests, approveEmailChangeRequest, denyEmailChangeRequest } from '../api/client'
@@ -46,8 +46,21 @@ export default function UserManagement() {
   const [version, setVersion] = useState(0)
   const refresh = useCallback(() => setVersion(v => v + 1), [])
 
-  // This will automatically refetch when version changes
-  const { data: users, loading, error } = useApi(getUsers, [version])
+  // Search and role filter
+  const [searchTerm, setSearchTerm] = useState('')
+  const [search, setSearch] = useState('')
+  const [roleFilter, setRoleFilter] = useState('')
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setSearch(searchTerm), 250)
+    return () => clearTimeout(timeout)
+  }, [searchTerm])
+
+  // This will automatically refetch when version, debounced search or roleFilter changes
+  const { data: users, loading, error } = useApi(
+    () => getUsers({ search: search || undefined, role: roleFilter || undefined }),
+    [version, search, roleFilter]
+  )
   const { data: requests, loading: loadingRequests, error: requestError, refetch: refreshRequests } = useApi(getEmailChangeRequests, [version])
 
   const [busy, setBusy] = useState('')   // '<userId>_<action>'
@@ -84,7 +97,7 @@ export default function UserManagement() {
         await activateUser(user.id)
       }
       flash(user.id)
-      window.location.reload() // ✅ Refresh after activate/deactivate
+      refresh() // refresh data without full page reload
     } catch (e) {
       setGlobalError(e?.response?.data?.detail ?? `${label} failed.`)
     } finally {
@@ -102,7 +115,7 @@ export default function UserManagement() {
     try {
       await deleteUser(user.id)
       flash(user.id)
-      window.location.reload() // ✅ Refresh after delete
+      refresh() // refresh data without full page reload
     } catch (e) {
       setGlobalError(e?.response?.data?.detail ?? 'Delete failed.')
     } finally {
@@ -116,7 +129,7 @@ export default function UserManagement() {
     try {
       await assignRole(userId, role)
       flash(userId)
-      window.location.reload() // ✅ Refresh after role assignment
+      refresh() // refresh data without full page reload
     } catch (e) {
       setGlobalError(e?.response?.data?.detail ?? 'Role assignment failed.')
     } finally {
@@ -130,7 +143,7 @@ export default function UserManagement() {
     try {
       await revokeRole(userId, role)
       flash(userId)
-      window.location.reload() // ✅ Refresh after role revocation
+      refresh() // refresh data without full page reload
     } catch (e) {
       setGlobalError(e?.response?.data?.detail ?? 'Role revoke failed.')
     } finally {
@@ -179,13 +192,13 @@ export default function UserManagement() {
     }
   }
 
-  // Loading state
-  if (loading) {
+  // If we haven't loaded any users yet, show a page-level loading state.
+  if (!users && loading) {
     return <div className="loading"><div className="spinner" />Loading users…</div>
   }
 
-  // Error state
-  if (error) {
+  // Show a top-level error if we cannot load users at all.
+  if (!users && error) {
     const s = error?.response?.status
     const msg = s === 401
       ? 'No valid session token — sign out and sign back in with the backend running.'
@@ -298,6 +311,32 @@ export default function UserManagement() {
           )}
         </div>
       )}
+
+      {/* Search & Role filter */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input
+          type="search"
+          placeholder="Search name or email"
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid #d1d5db', width: 300 }}
+        />
+
+        <select
+          value={roleFilter}
+          onChange={e => setRoleFilter(e.target.value)}
+          style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid #d1d5db' }}
+        >
+          <option value="">All roles</option>
+          {ALL_ROLES.map(r => (
+            <option key={r} value={r}>{ROLE_META[r]?.label ?? r}</option>
+          ))}
+        </select>
+
+        <button type="button" className="btn btn-sm btn-secondary" onClick={() => { setSearchTerm(''); setSearch(''); setRoleFilter('') }}>
+          Clear
+        </button>
+      </div>
 
       {/* Users table */}
       <div className="card">

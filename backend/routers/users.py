@@ -8,7 +8,7 @@ import uuid
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -96,16 +96,33 @@ async def _get_role_or_404(db: AsyncSession, role_name: str) -> Role:
 async def list_users(
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=500),
+    search: str | None = Query(default=None),
+    role: str | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> List[UserResponse]:
-    """Return a paginated list of all users with their role names."""
-    result = await db.execute(
+    """Return a paginated list of users with optional search and role filters.
+
+    - `search` will match against full name and email (case-insensitive, partial).
+    - `role` will restrict to users who hold the named role.
+    """
+
+    stmt = (
         select(User)
         .options(selectinload(User.user_roles).selectinload(UserRole.role))
         .order_by(User.created_at.desc())
-        .offset(skip)
-        .limit(limit)
     )
+
+    if search:
+        term = f"%{search}%"
+        stmt = stmt.where(or_(User.full_name.ilike(term), User.email.ilike(term)))
+
+    if role:
+        # join through user_roles -> role to filter by role name
+        stmt = stmt.join(User.user_roles).join(Role).where(Role.name == role).distinct()
+
+    stmt = stmt.offset(skip).limit(limit)
+
+    result = await db.execute(stmt)
     users = result.scalars().all()
     return [_user_to_response(u) for u in users]
 

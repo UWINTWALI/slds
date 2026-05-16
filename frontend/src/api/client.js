@@ -31,7 +31,7 @@ export const getSectorList       = (district)    => api.get('/sectors', { params
 
 // ── User management (national_admin only) ────────────────────────────────────
 // Trailing slashes avoid FastAPI's 307 redirect which strips the Auth header
-export const getUsers      = ()              => api.get('/users/').then(r => r.data)
+export const getUsers      = (params = {})   => api.get('/users/', { params }).then(r => r.data)
 export const deactivateUser = (id)           => api.patch(`/users/${id}`, { is_active: false }).then(r => r.data)
 export const deleteUser     = (id)           => api.delete(`/users/${id}`).then(r => r.data)
 export const activateUser   = (id)           => api.patch(`/users/${id}`, { is_active: true }).then(r => r.data)

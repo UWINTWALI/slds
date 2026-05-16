@@ -1,1 +1,7 @@
-Access is denied.
+nohup: ignoring input
+INFO:     Will watch for changes in these directories: ['C:\\Users\\HP\\Desktop\\Proposal_Final\\slds_app\\backend']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [9616] using StatReload
+INFO:     Started server process [16516]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
