@@ -115,7 +115,7 @@ export default function UserManagement() {
     try {
       await deleteUser(user.id)
       flash(user.id)
-      refresh() // refresh data without full page reload
+      location.reload(); // refresh data without full page reload
     } catch (e) {
       setGlobalError(e?.response?.data?.detail ?? 'Delete failed.')
     } finally {
@@ -129,7 +129,7 @@ export default function UserManagement() {
     try {
       await assignRole(userId, role)
       flash(userId)
-      refresh() // refresh data without full page reload
+      location.reload(); // refresh data without full page reload
     } catch (e) {
       setGlobalError(e?.response?.data?.detail ?? 'Role assignment failed.')
     } finally {
@@ -143,7 +143,7 @@ export default function UserManagement() {
     try {
       await revokeRole(userId, role)
       flash(userId)
-      refresh() // refresh data without full page reload
+      location.reload(); // refresh data without full page reload
     } catch (e) {
       setGlobalError(e?.response?.data?.detail ?? 'Role revoke failed.')
     } finally {
