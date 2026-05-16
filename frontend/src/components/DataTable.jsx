@@ -29,7 +29,44 @@ const LABELS = {
   is_lagging:              'Lagging',
 }
 
-export default function DataTable({ rows = [], columns, highlight, onRowClick, selectedKey, selectedValue }) {
+const SKIP_AVG = new Set([
+  'adm3_en', 'adm2_en', 'tier',
+  'cdi_district_rank', 'cdi_national_rank', 'is_lagging',
+])
+
+export function computeColumnAverages(rows, columns) {
+  if (!rows?.length) return {}
+  const avgs = {}
+  for (const col of columns ?? Object.keys(rows[0])) {
+    if (SKIP_AVG.has(col)) continue
+    const vals = rows.map(r => r[col]).filter(v => typeof v === 'number' && Number.isFinite(v))
+    if (vals.length) avgs[col] = vals.reduce((s, v) => s + v, 0) / vals.length
+  }
+  return avgs
+}
+
+function formatAvg(col, avg) {
+  if (avg == null || Number.isNaN(avg)) return null
+  if (col.includes('poverty') || col.includes('rate')) return `${(avg * 100).toFixed(1)}%`
+  if (col === 'cdi') return avg.toFixed(1)
+  if (col.includes('density') || col.includes('road')) return avg.toFixed(2)
+  if (col.includes('count') || col === 'school_count') return String(Math.round(avg))
+  return avg.toFixed(2)
+}
+
+function ColumnHeader({ col, avg }) {
+  const base = LABELS[col] ?? col.replace(/_/g, ' ')
+  const avgText = formatAvg(col, avg)
+  if (!avgText) return base
+  return (
+    <span className="dt-th-inner">
+      <span className="dt-th-label">{base}</span>
+      <span className="dt-th-avg">avg {avgText}</span>
+    </span>
+  )
+}
+
+export default function DataTable({ rows = [], columns, columnAverages, highlight, onRowClick, selectedKey, selectedValue }) {
   const [sortCol,  setSortCol]  = useState(null)
   const [sortAsc,  setSortAsc]  = useState(true)
 
@@ -59,7 +96,7 @@ export default function DataTable({ rows = [], columns, highlight, onRowClick, s
           <tr>
             {cols.map(c => (
               <th key={c} onClick={() => handleSort(c)}>
-                {LABELS[c] ?? c.replace(/_/g, ' ')}
+                <ColumnHeader col={c} avg={columnAverages?.[c]} />
                 {sortCol === c ? (sortAsc ? ' ↑' : ' ↓') : ''}
               </th>
             ))}

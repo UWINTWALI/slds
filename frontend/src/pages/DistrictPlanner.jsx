@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
          RadarChart, Radar, PolarGrid, PolarAngleAxis, Cell } from 'recharts'
 import { useApi } from '../hooks/useApi'
 import { useRole } from '../hooks/useRole'
 import { getDistricts, getDistrictSummary, getDistrictSectors, getDistrictGeojson } from '../api/client'
 import MetricCard from '../components/MetricCard'
-import DataTable from '../components/DataTable'
+import DataTable, { computeColumnAverages } from '../components/DataTable'
 import ChoroplethMap from '../components/ChoroplethMap'
 import { generateDistrictReport } from '../utils/reportUtils'
 import { IconBarChart, IconMap, IconScale, IconSliders, IconFileText } from '../components/Icons'
@@ -72,6 +72,11 @@ export default function DistrictPlanner() {
   // CDI bar chart
   const barData = sectors ? [...sectors].sort((a,b) => a.cdi - b.cdi) : []
   const distAvg = summary?.avg_cdi ?? 0
+
+  const columnAverages = useMemo(
+    () => (sectors?.length ? computeColumnAverages(sectors, TABLE_COLS) : {}),
+    [sectors]
+  )
 
   return (
     <div className="gap-16">
@@ -145,7 +150,7 @@ export default function DistrictPlanner() {
         <div className="gap-16">
           {/* CDI bar chart */}
           <div className="card">
-            <div className="card-title">Sector CDI Scores — {district}</div>
+            <div className="card-title">Sector CDI Scores: {district}</div>
             {lr
               ? <div className="loading"><div className="spinner"/>Loading…</div>
               : (
@@ -195,7 +200,7 @@ export default function DistrictPlanner() {
                 >Export CSV</a>
               </div>
             </div>
-            <DataTable rows={sectors ?? []} columns={TABLE_COLS} />
+            <DataTable rows={sectors ?? []} columns={TABLE_COLS} columnAverages={columnAverages} />
           </div>
         </div>
       )}

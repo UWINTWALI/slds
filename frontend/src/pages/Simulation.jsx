@@ -3,7 +3,7 @@
  * The user never sees a form. They pick a location, then add infrastructure
  * using cards with +/− controls. The system auto-predicts as they type.
  */
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { useApi, useApiLazy } from '../hooks/useApi'
 import { useAuth } from '../context/AuthContext'
@@ -11,12 +11,13 @@ import { useRole } from '../hooks/useRole'
 import {
   getDistricts, getSectorList, getSector,
   getSimFeatures, simulateSingle, simulateBatch, compareInvestments,
+  getModelPerformance,
 } from '../api/client'
 import DataTable from '../components/DataTable'
 import {
   IconRoad, IconActivity, IconBookOpen, IconZap, IconUsers,
   IconSliders, IconMap, IconBarChart,
-  IconMapPin, IconCheckCircle, IconAlertTriangle, IconLoader, IconTrendingDown, IconInfo,
+  IconMapPin, IconLoader, IconTrendingDown, IconInfo,
 } from '../components/Icons'
 
 /* ── Infrastructure configuration ───────────────────────────────────────────── */
@@ -43,11 +44,42 @@ const INFRA = {
   },
 }
 
+const FEATURE_KEYS = [
+  'road_density_km_per_km2',
+  'health_facility_count',
+  'school_count',
+  'nightlight_mean',
+  'pop_density_mean',
+]
+
+function baselineFromSector(sectorData) {
+  if (!sectorData) return {}
+  return Object.fromEntries(
+    FEATURE_KEYS.map(k => [k, Number(sectorData[k]) || 0])
+  )
+}
+
+function featureLabel(key) {
+  return INFRA[key]?.label ?? key.replace(/_/g, ' ')
+}
+
+function topModelFeature(importances, features) {
+  if (!importances) return null
+  const keys = (features ?? FEATURE_KEYS).filter(k => importances[k] != null)
+  if (!keys.length) return null
+  return keys.reduce((a, b) => (importances[a] >= importances[b] ? a : b))
+}
+
 /* ── Infrastructure card ─────────────────────────────────────────────────────── */
-function InfraCard({ featureKey, value, currentVal, onChange }) {
+function InfraCard({ featureKey, value, baseline = 0, onChange, absolute = false }) {
   const cfg = INFRA[featureKey]
   if (!cfg) return null
-  const active = value > 0
+  const base = baseline ?? 0
+  const delta = absolute ? value - base : value
+  const active = absolute ? Math.abs(delta) > 0.001 : value > 0
+  const sliderMin = absolute ? base : 0
+  const sliderMax = absolute ? base + cfg.max : cfg.max
+  const fmt = n => (typeof n === 'number' ? n.toFixed(2) : n)
 
   return (
     <div className={`infra-card${active ? ' infra-card-active' : ''}`}
@@ -63,34 +95,31 @@ function InfraCard({ featureKey, value, currentVal, onChange }) {
         </div>
         <div className="infra-card-meta">
           <div className="infra-card-label">{cfg.label}</div>
-          {currentVal != null && (
+          {absolute && (
             <div className="infra-card-current">
-              Now: {typeof currentVal === 'number' ? currentVal.toFixed(2) : currentVal} {cfg.unit}
+              {fmt(value)} {cfg.unit}
+              {active && <span className="infra-card-delta"> (+{fmt(delta)})</span>}
             </div>
           )}
         </div>
-        {active && (
-          <span className="infra-card-badge" style={{ background: cfg.color + '20', color: cfg.color }}>
-            +{value} {cfg.unit}
-          </span>
-        )}
       </div>
 
       <div className="infra-card-controls">
         <button
           className="infra-step-btn"
-          onClick={() => onChange(Math.max(0, +(value - cfg.step).toFixed(2)))}
-          disabled={value <= 0}
+          onClick={() => onChange(Math.max(sliderMin, +(value - cfg.step).toFixed(2)))}
+          disabled={value <= sliderMin}
         >−</button>
         <input
-          type="range" min={0} max={cfg.max} step={cfg.step} value={value}
+          type="range" min={sliderMin} max={sliderMax} step={cfg.step} value={value}
           className="infra-slider"
           style={{ accentColor: cfg.color }}
           onChange={e => onChange(+e.target.value)}
         />
         <button
           className="infra-step-btn"
-          onClick={() => onChange(Math.min(cfg.max, +(value + cfg.step).toFixed(2)))}
+          onClick={() => onChange(Math.min(sliderMax, +(value + cfg.step).toFixed(2)))}
+          disabled={value >= sliderMax}
         >+</button>
       </div>
 
@@ -100,10 +129,11 @@ function InfraCard({ featureKey, value, currentVal, onChange }) {
 }
 
 /* ── Impact panel ────────────────────────────────────────────────────────────── */
-function ImpactPanel({ sectorData, result, loading }) {
+function ImpactPanel({ sectorData, result, loading, influentialKey }) {
   const before  = sectorData?.predicted_poverty_rate
   const after   = result?.after
   const delta   = result?.delta
+  const influential = influentialKey ? featureLabel(influentialKey) : null
 
   return (
     <div className="impact-panel">
@@ -128,10 +158,10 @@ function ImpactPanel({ sectorData, result, loading }) {
               <div className="impact-arrow">→</div>
               <div className="impact-cell">
                 <div className="impact-cell-label">After Intervention</div>
-                <div className={`impact-cell-val ${delta < 0 ? 'impact-good' : 'impact-bad'}`}>
+                <div className="impact-cell-val">
                   {(after * 100).toFixed(1)}%
                 </div>
-                <div className={`impact-delta ${delta < 0 ? 'impact-good' : 'impact-bad'}`}>
+                <div className="impact-delta">
                   {delta < 0 ? '▼' : '▲'} {Math.abs(delta * 100).toFixed(2)} pp
                 </div>
               </div>
@@ -142,13 +172,19 @@ function ImpactPanel({ sectorData, result, loading }) {
 
       {sectorData && (
         <div className="impact-meta">
+          {influential && (
+            <div className="impact-meta-row impact-influential">
+              <span>Most influential</span>
+              <strong>{influential}</strong>
+            </div>
+          )}
           <div className="impact-meta-row">
             <span>CDI Score</span>
             <strong>{sectorData.cdi?.toFixed(1) ?? '—'} / 100</strong>
           </div>
           <div className="impact-meta-row">
             <span>Development Tier</span>
-            <span className={`tier-badge tier-${sectorData.tier}`}>{sectorData.tier ?? '—'}</span>
+            <span className="impact-tier">{sectorData.tier ?? '—'}</span>
           </div>
           <div className="impact-meta-row">
             <span>District Rank</span>
@@ -210,7 +246,7 @@ export default function Simulation() {
   // ── Scenario builder state ──
   const [district, setDistrict]   = useState(user?.district ?? '')
   const [sector,   setSector]     = useState(user?.sector   ?? '')
-  const [additions, setAdditions] = useState({})   // { feature: addedAmount }
+  const [levels, setLevels] = useState({})   // { feature: absolute value }
   const [simResult, setSimResult] = useState(null)
 
   // ── Batch state ──
@@ -222,6 +258,7 @@ export default function Simulation() {
 
   const { data: districts }  = useApi(getDistricts)
   const { data: features }   = useApi(getSimFeatures)
+  const { data: modelPerf }  = useApi(getModelPerformance)
   const { data: sectorList } = useApi(
     () => district ? getSectorList(district) : Promise.resolve([]), [district]
   )
@@ -241,10 +278,29 @@ export default function Simulation() {
     if (!sector && sectorList?.length) setSector(sectorList[0])
   }, [sectorList])
 
+  const baseline = useMemo(() => baselineFromSector(sectorData), [sectorData])
+
+  useEffect(() => {
+    if (sectorData) {
+      setLevels(baselineFromSector(sectorData))
+      setSimResult(null)
+    } else {
+      setLevels({})
+    }
+  }, [sectorData])
+
+  function deltasFromLevels(lvls, base) {
+    return Object.fromEntries(
+      Object.entries(lvls)
+        .map(([k, v]) => [k, v - (base[k] ?? 0)])
+        .filter(([, d]) => Math.abs(d) > 0.001)
+    )
+  }
+
   // Debounced auto-predict
   const debounceRef = useRef(null)
-  const predict = useCallback(async (sec, adds) => {
-    const inv = Object.fromEntries(Object.entries(adds).filter(([,v]) => v > 0))
+  const predict = useCallback(async (sec, lvls, base) => {
+    const inv = deltasFromLevels(lvls, base)
     if (!sec || !Object.keys(inv).length) { setSimResult(null); return }
     const res = await runSingle(() => simulateSingle(sec, inv))
     if (res) setSimResult(res)
@@ -252,30 +308,25 @@ export default function Simulation() {
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => predict(sector, additions), 700)
+    debounceRef.current = setTimeout(() => predict(sector, levels, baseline), 700)
     return () => clearTimeout(debounceRef.current)
-  }, [sector, additions, predict])
+  }, [sector, levels, baseline, predict])
 
-  function setAdd(feat, val) {
-    setAdditions(prev => ({ ...prev, [feat]: val }))
+  function setLevel(feat, val) {
+    setLevels(prev => ({ ...prev, [feat]: val }))
   }
   function setBatchAdd(feat, val) {
     setBatchAdditions(prev => ({ ...prev, [feat]: val }))
   }
 
-  const hasAdditions = Object.values(additions).some(v => v > 0)
+  const hasChanges = Object.keys(deltasFromLevels(levels, baseline)).length > 0
   const hasBatchAdds = Object.values(batchAdditions).some(v => v > 0)
 
   const activeFeatures = features ?? Object.keys(INFRA)
 
-  // Build current vals for display
-  const currentVals = sectorData ? {
-    road_density_km_per_km2: sectorData.road_density_km_per_km2,
-    health_facility_count:   sectorData.health_facility_count,
-    school_count:            sectorData.school_count,
-    nightlight_mean:         sectorData.nightlight_mean,
-    pop_density_mean:        sectorData.pop_density_mean,
-  } : {}
+  const influentialKey =
+    simResult?.influential_feature
+    ?? topModelFeature(modelPerf?.importances, activeFeatures)
 
   const batchCols = ['sector','district','before','after','delta','pct_change']
 
@@ -306,8 +357,8 @@ export default function Simulation() {
 
           {/* Location bar */}
           <LocationBar
-            district={district} setDistrict={d => { setDistrict(d); setSector(''); setSimResult(null); setAdditions({}) }}
-            sector={sector}     setSector={s => { setSector(s); setSimResult(null); setAdditions({}) }}
+            district={district} setDistrict={d => { setDistrict(d); setSector(''); setSimResult(null) }}
+            sector={sector}     setSector={s => { setSector(s); setSimResult(null) }}
             districts={isDistrict || isSector ? [user.district] : districts}
             sectorList={sectorList}
           />
@@ -331,9 +382,10 @@ export default function Simulation() {
                 <InfraCard
                   key={feat}
                   featureKey={feat}
-                  value={additions[feat] ?? 0}
-                  currentVal={currentVals[feat]}
-                  onChange={val => setAdd(feat, val)}
+                  value={levels[feat] ?? baseline[feat] ?? 0}
+                  baseline={baseline[feat] ?? 0}
+                  absolute
+                  onChange={val => setLevel(feat, val)}
                 />
               ))}
             </div>
@@ -344,32 +396,31 @@ export default function Simulation() {
                 sectorData={lSector ? null : sectorData}
                 result={simResult}
                 loading={lSingle}
+                influentialKey={influentialKey}
               />
 
-              {hasAdditions && simResult && !lSingle && (
-                <div className="sim-result-verdict" style={{
-                  background: simResult.delta < 0 ? '#f0fdf4' : '#fef2f2',
-                  borderColor: simResult.delta < 0 ? '#bbf7d0' : '#fecaca',
-                  display: 'flex', alignItems: 'flex-start', gap: 8,
-                }}>
+              {hasChanges && simResult && !lSingle && (
+                <div className="sim-result-verdict">
                   {simResult.delta < 0
-                    ? <><IconCheckCircle size={14} color="#16a34a" style={{ marginTop: 1, flexShrink: 0 }} />
-                        <span>This intervention reduces poverty by <strong>{Math.abs(simResult.pct_change).toFixed(1)}%</strong> in {simResult.sector}.</span></>
-                    : <><IconAlertTriangle size={14} color="#dc2626" style={{ marginTop: 1, flexShrink: 0 }} />
-                        <span>No significant poverty reduction with this combination. Try adding more infrastructure.</span></>
-                  }
+                    ? `Poverty rate falls by ${Math.abs(simResult.delta * 100).toFixed(1)} percentage points in ${simResult.sector} (${(simResult.before * 100).toFixed(1)}% to ${(simResult.after * 100).toFixed(1)}%).`
+                    : 'Limited poverty reduction with this combination.'}
                 </div>
               )}
 
-              {hasAdditions && (
+              {hasChanges && (
                 <div className="sim-additions-summary">
                   <div className="sim-additions-title">Planned additions</div>
-                  {Object.entries(additions).filter(([,v]) => v > 0).map(([k, v]) => (
-                    <div key={k} className="sim-addition-row">
-                      <span>{INFRA[k]?.label}</span>
-                      <span style={{ fontWeight: 600, color: 'var(--rw-green)' }}>+{v} {INFRA[k]?.unit}</span>
-                    </div>
-                  ))}
+                  {activeFeatures
+                    .filter(f => Math.abs((levels[f] ?? baseline[f] ?? 0) - (baseline[f] ?? 0)) > 0.001)
+                    .map(f => {
+                      const d = (levels[f] ?? baseline[f]) - (baseline[f] ?? 0)
+                      return (
+                        <div key={f} className="sim-addition-row">
+                          <span>{INFRA[f]?.label}</span>
+                          <span>+{d.toFixed(2)} {INFRA[f]?.unit}</span>
+                        </div>
+                      )
+                    })}
                 </div>
               )}
 

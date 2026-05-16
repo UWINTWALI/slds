@@ -158,7 +158,7 @@ export default function SectorPlanner() {
           {gap < -10
             ? <div className="alert alert-danger" style={{ display:'flex', alignItems:'flex-start', gap:9 }}>
                 <IconAlertTriangle size={15} style={{ marginTop:1, flexShrink:0 }} />
-                <span>LAG ALERT — <strong>{sector}</strong> is {Math.abs(gap).toFixed(1)} CDI points below the {district} district average ({distAvg.toFixed(1)}). Priority investment is recommended.</span>
+                <span>LAG ALERT! <br/> <strong>{sector}</strong> is {Math.abs(gap).toFixed(1)} CDI points below the {district} district average ({distAvg.toFixed(1)}). Priority investment is recommended.</span>
               </div>
             : gap < 0
             ? <div className="alert alert-warning" style={{ display:'flex', alignItems:'flex-start', gap:9 }}>

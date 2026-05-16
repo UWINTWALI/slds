@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { useApi } from '../hooks/useApi'
 import { getNationalSummary, getNationalSectors, getNationalGeojson, getModelPerformance } from '../api/client'
 import MetricCard from '../components/MetricCard'
-import DataTable from '../components/DataTable'
+import DataTable, { computeColumnAverages } from '../components/DataTable'
 import ChoroplethMap from '../components/ChoroplethMap'
 import { IconGlobe, IconBarChart } from '../components/Icons'
 
@@ -28,6 +28,11 @@ export default function NationalOverview() {
   const { data: sectors,  loading: l2 } = useApi(getNationalSectors)
   const { data: geojson,  loading: l3 } = useApi(getNationalGeojson)
   const { data: perf,     loading: l4 } = useApi(getModelPerformance)
+
+  const columnAverages = useMemo(
+    () => (sectors?.length ? computeColumnAverages(sectors, TABLE_COLS) : {}),
+    [sectors]
+  )
 
   if (l1 || l2) return <div className="loading"><div className="spinner" /> Loading national data…</div>
 
@@ -65,7 +70,7 @@ export default function NationalOverview() {
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12, flexWrap:'wrap', gap:10 }}>
           <div className="card-title" style={{ marginBottom:0, display:'flex', alignItems:'center', gap:7 }}>
             <IconGlobe size={14} color="var(--gray-400)" />
-            Rwanda — National Sector Map
+            Rwanda: National Sector Map
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             <span style={{ fontSize:11, color:'var(--gray-500)' }}>Colour by:</span>
@@ -105,7 +110,7 @@ export default function NationalOverview() {
       <div className="card">
         <div className="card-title" style={{ display:'flex', alignItems:'center', gap:7 }}>
           <IconBarChart size={14} color="var(--gray-400)" />
-          District Equity — Average CDI Across All Districts
+          District Equity . Average CDI Across All Districts
         </div>
         <ResponsiveContainer width="100%" height={320}>
           <BarChart data={distAvg} layout="vertical" margin={{ left:90, right:40, top:4, bottom:4 }}>
@@ -149,7 +154,7 @@ export default function NationalOverview() {
             </a>
           </div>
         </div>
-        <DataTable rows={shown} columns={TABLE_COLS} />
+        <DataTable rows={shown} columns={TABLE_COLS} columnAverages={columnAverages} />
       </div>
 
       {/* Model performance */}

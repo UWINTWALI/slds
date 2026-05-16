@@ -18,6 +18,7 @@ import {
   getSector, getModelPerformance,
 } from '../api/client'
 import MetricCard from '../components/MetricCard'
+import UnderservedSectorList from '../components/UnderservedSectorList'
 import { generateMinistryPublication } from '../utils/reportUtils'
 import {
   IconGlobe, IconMap, IconMapPin, IconFlask, IconUsers,
@@ -51,7 +52,7 @@ function DashCard({ children, title, action, actionLabel, Icon }) {
         </div>
         {action && (
           <button className="dash-card-action" onClick={() => navigate(action)}>
-            {actionLabel ?? 'View all →'}
+            {actionLabel ?? 'View all'}
           </button>
         )}
       </div>
@@ -128,19 +129,9 @@ function MinistryHome() {
         <div className="dash-command-left">
           <div className="dash-command-title">Ministry Operations Center</div>
           <div className="dash-command-sub">
-            Welcome, <strong>{user?.name}</strong> &nbsp;·&nbsp; MINALOC / RISA &nbsp;·&nbsp;
+            Welcome, <strong>{user?.name}</strong> &nbsp;·&nbsp; MINIFRA &nbsp;·&nbsp;
             {new Date().toLocaleDateString('en-RW', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
           </div>
-        </div>
-        <div className="dash-command-actions">
-          <button onClick={() => navigate('/national')} className="btn btn-primary"
-            style={{ background: meta.accent, borderColor: meta.accent, fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <IconGlobe size={14} /> Open National Map
-          </button>
-          <button onClick={() => navigate('/simulation')} className="btn btn-secondary"
-            style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <IconSliders size={14} /> Run Simulation
-          </button>
         </div>
       </div>
 
@@ -161,7 +152,7 @@ function MinistryHome() {
         <AlertBar type="warning">
           <strong>{summary.lagging_sectors} sectors</strong> across Rwanda are below CDI 40 (Lagging tier) and require immediate infrastructure investment.
           <button onClick={() => navigate('/national')} style={{ marginLeft: 10, fontWeight: 600, textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', fontSize: 13 }}>
-            View on map →
+            View on map
           </button>
         </AlertBar>
       )}
@@ -169,57 +160,40 @@ function MinistryHome() {
       {/* Main 2-column content */}
       <div className="grid-2">
         {/* Underserved sectors — publish candidate list */}
-        <DashCard title="Most Underserved Sectors" Icon={IconTrendingDown} action="/national" actionLabel="Full national map →">
-          {l2
-            ? <div className="loading"><div className="spinner" />Loading…</div>
-            : (
-              <div>
-                {laggingList.map((s, i) => (
-                  <div key={s.adm3_en} className="underserved-row">
-                    <div className="underserved-rank">#{i + 1}</div>
-                    <div className="underserved-info">
-                      <div className="underserved-name">{s.adm3_en}</div>
-                      <div className="underserved-district">{s.adm2_en} District</div>
-                    </div>
-                    <div className="underserved-scores">
-                      <div className="underserved-cdi" style={{ color: '#dc2626' }}>{s.cdi?.toFixed(1)}</div>
-                      <div style={{ fontSize: 10, color: 'var(--gray-400)' }}>CDI</div>
-                    </div>
-                    <div className="underserved-missing">
-                      {s.road_density_km_per_km2 < 0.3 && <span className="missing-tag">Roads</span>}
-                      {s.health_facility_count < 2   && <span className="missing-tag">Health</span>}
-                      {s.school_count < 3             && <span className="missing-tag">Schools</span>}
-                    </div>
-                  </div>
-                ))}
-                <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-                  <button
-                    onClick={() => sectors && laggingList.length && generateMinistryPublication(
-                      sectors,
-                      laggingList.map(s => s.adm3_en),
-                      {}
-                    )}
-                    className="btn btn-primary"
-                    disabled={!sectors || !laggingList.length}
-                    style={{ fontSize: 12, background: meta.accent, borderColor: meta.accent, display: 'flex', alignItems: 'center', gap: 6 }}
-                  >
-                    <IconShare size={13} /> Publish Underserved Sectors
-                  </button>
-                  <button
-                    onClick={() => navigate('/simulation')}
-                    className="btn btn-secondary"
-                    style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}
-                  >
-                    <IconSliders size={13} /> Simulate Interventions
-                  </button>
-                </div>
+        <DashCard title="Most Underserved Sectors" Icon={IconTrendingDown} action="/national" actionLabel="Full national map">
+          <UnderservedSectorList
+            sectors={laggingList}
+            loading={l2}
+            scrollMaxHeight={320}
+            emptyMessage="No sectors below CDI 40 (Lagging tier) at this time."
+            footer={
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => sectors && laggingList.length && generateMinistryPublication(
+                    sectors,
+                    laggingList.map(s => s.adm3_en),
+                    {}
+                  )}
+                  className="btn btn-primary"
+                  disabled={!sectors || !laggingList.length}
+                  style={{ fontSize: 12, background: meta.accent, borderColor: meta.accent, display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  <IconShare size={13} /> Publish Underserved Sectors
+                </button>
+                <button
+                  onClick={() => navigate('/simulation')}
+                  className="btn btn-secondary"
+                  style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  <IconSliders size={13} /> Simulate Interventions
+                </button>
               </div>
-            )
-          }
+            }
+          />
         </DashCard>
 
         {/* District equity chart */}
-        <DashCard title="District CDI Equity — 12 Lowest" Icon={IconBarChart} action="/district" actionLabel="Full district reports →">
+        <DashCard title="District CDI Equity: 12 Lowest" Icon={IconBarChart} action="/district" actionLabel="Full district reports">
           {l2
             ? <div className="loading"><div className="spinner" />Loading…</div>
             : (
@@ -275,15 +249,6 @@ function DistrictHome() {
   const lagging   = ranked.filter(s => s.is_lagging)
   const bottom4   = ranked.slice(0, 4)
 
-  function getMissing(s) {
-    const items = []
-    if ((s.road_density_km_per_km2 ?? 0) < 0.3)   items.push('Roads')
-    if ((s.health_facility_count   ?? 0) < 2)       items.push('Health')
-    if ((s.school_count            ?? 0) < 3)       items.push('Schools')
-    if ((s.nightlight_mean         ?? 0) < 1.5)     items.push('Electricity')
-    return items
-  }
-
   return (
     <div className="gap-16">
       {/* Header */}
@@ -295,16 +260,7 @@ function DistrictHome() {
             {new Date().toLocaleDateString('en-RW', { month: 'long', day: 'numeric', year: 'numeric' })}
           </div>
         </div>
-        <div className="dash-command-actions">
-          <button onClick={() => navigate('/district')} className="btn btn-primary"
-            style={{ background: meta.accent, borderColor: meta.accent, fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <IconMap size={14} /> District Overview
-          </button>
-          <button onClick={() => navigate('/simulation')} className="btn btn-secondary"
-            style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <IconSliders size={14} /> Simulation
-          </button>
-        </div>
+      
       </div>
 
       {/* District KPIs */}
@@ -328,7 +284,7 @@ function DistrictHome() {
 
       <div className="grid-2">
         {/* CDI ranking bar */}
-        <DashCard title={`Sector CDI Ranking — ${district}`} Icon={IconBarChart} action="/district" actionLabel="Full overview →">
+        <DashCard title={`Sector CDI Ranking : ${district}`} Icon={IconBarChart} action="/district" actionLabel="Full overview">
           {l2
             ? <div className="loading"><div className="spinner" />Loading…</div>
             : (
@@ -349,47 +305,22 @@ function DistrictHome() {
         </DashCard>
 
         {/* Underserved sectors + missing infra */}
-        <DashCard title="Underserved Sectors — Infrastructure Gaps" Icon={IconAlertTriangle} action="/simulation" actionLabel="Plan interventions →">
-          {l2
-            ? <div className="loading"><div className="spinner" />Loading…</div>
-            : (
-              <div>
-                {bottom4.map((s, i) => {
-                  const missing = getMissing(s)
-                  return (
-                    <div key={s.adm3_en} className="underserved-row" style={{ paddingBottom: 12, marginBottom: 12, borderBottom: i < 3 ? '1px solid var(--gray-100)' : 'none' }}>
-                      <div className="underserved-rank" style={{ background: s.is_lagging ? '#fef2f2' : 'var(--gray-100)', color: s.is_lagging ? '#dc2626' : 'var(--gray-600)' }}>
-                        #{i + 1}
-                      </div>
-                      <div className="underserved-info">
-                        <div className="underserved-name">
-                          {s.adm3_en}
-                          {s.is_lagging && <span className="lagging-tag">LAGGING</span>}
-                        </div>
-                        <div className="underserved-district">CDI {s.cdi?.toFixed(1)} · Poverty {s.predicted_poverty_rate != null ? `${(s.predicted_poverty_rate * 100).toFixed(0)}%` : '—'}</div>
-                        {missing.length > 0 && (
-                          <div style={{ marginTop: 5, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                            <span style={{ fontSize: 10, color: 'var(--gray-400)' }}>Missing:</span>
-                            {missing.map(m => <span key={m} className="missing-tag">{m}</span>)}
-                          </div>
-                        )}
-                      </div>
-                      <div className="underserved-cdi" style={{ color: s.cdi < 40 ? '#dc2626' : s.cdi < 60 ? '#ca8a04' : '#16a34a' }}>
-                        {s.cdi?.toFixed(1)}
-                      </div>
-                    </div>
-                  )
-                })}
-                <button
-                  onClick={() => navigate('/simulation')}
-                  className="btn btn-primary"
-                  style={{ width: '100%', justifyContent: 'center', marginTop: 4, fontSize: 12, background: meta.accent, borderColor: meta.accent, display: 'flex', alignItems: 'center', gap: 6 }}
-                >
-                  <IconSliders size={13} /> Simulate infrastructure additions
-                </button>
-              </div>
-            )
-          }
+        <DashCard title="Underserved Sectors . Infrastructure Gaps" Icon={IconAlertTriangle} action="/simulation" actionLabel="Plan interventions">
+          <UnderservedSectorList
+            sectors={bottom4}
+            loading={l2}
+            scrollMaxHeight={280}
+            emptyMessage={`No sector data for ${district}.`}
+            footer={
+              <button
+                onClick={() => navigate('/simulation')}
+                className="btn btn-primary"
+                style={{ width: '100%', justifyContent: 'center', fontSize: 12, background: meta.accent, borderColor: meta.accent, display: 'flex', alignItems: 'center', gap: 6 }}
+              >
+                <IconSliders size={13} /> Simulate infrastructure additions
+              </button>
+            }
+          />
         </DashCard>
       </div>
 
@@ -463,10 +394,6 @@ function SectorHome() {
           </div>
         </div>
         <div className="dash-command-actions">
-          <button onClick={() => navigate('/simulation')} className="btn btn-primary"
-            style={{ background: meta.accent, borderColor: meta.accent, fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <IconSliders size={14} /> Simulate Investment
-          </button>
           {sectorData && (
             <a
               href={`data:text/csv;charset=utf-8,${encodeURIComponent(csvContent)}`}
@@ -484,7 +411,7 @@ function SectorHome() {
       {!l1 && sectorData && (
         gap < -10
           ? <AlertBar type="danger">
-              LAG ALERT — {sector} is <strong>{Math.abs(gap).toFixed(1)} CDI points</strong> below the {district} district average ({distAvg.toFixed(1)}). Consider requesting infrastructure investment.
+              LAG ALERT! <br/>{sector} is <strong>{Math.abs(gap).toFixed(1)} CDI points</strong> below the {district} district average ({distAvg.toFixed(1)}). Consider requesting infrastructure investment.
             </AlertBar>
           : gap < 0
             ? <AlertBar type="warning">
@@ -595,13 +522,11 @@ function SectorHome() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
                 <button onClick={() => navigate('/sector')} className="btn btn-primary"
                   style={{ justifyContent: 'center', fontSize: 12, background: meta.accent, borderColor: meta.accent }}>
-                  Full Sector Analysis →
+                  Full Sector Analysis
                 </button>
-                <button onClick={() => navigate('/simulation')} className="btn btn-secondary" style={{ justifyContent: 'center', fontSize: 12 }}>
-                  Simulate Investment Impact →
-                </button>
+               
                 <button onClick={() => navigate('/district')} className="btn btn-secondary" style={{ justifyContent: 'center', fontSize: 12 }}>
-                  View in District Context →
+                  View in District Context
                 </button>
               </div>
             </>

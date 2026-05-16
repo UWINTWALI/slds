@@ -50,12 +50,26 @@ def simulate(sector_name: str, intervention: dict) -> dict | None:
     before = float(model.predict(baseline)[0])
     after  = float(model.predict(counterfact)[0])
     delta  = after - before
+
+    influential = None
+    max_effect = 0.0
+    for feat, change in intervention.items():
+        if feat not in counterfact.columns or not change:
+            continue
+        single = baseline.copy()
+        single[feat] = (single[feat] + float(change)).clip(lower=0)
+        effect = abs(float(model.predict(single)[0]) - before)
+        if effect > max_effect:
+            max_effect = effect
+            influential = feat
+
     return {
-        "sector":     sector_name,
-        "before":     round(before, 4),
-        "after":      round(after,  4),
-        "delta":      round(delta,  4),
-        "pct_change": round(delta / before * 100, 2) if before > 0 else 0.0,
+        "sector":              sector_name,
+        "before":              round(before, 4),
+        "after":               round(after,  4),
+        "delta":               round(delta,  4),
+        "pct_change":          round(delta / before * 100, 2) if before > 0 else 0.0,
+        "influential_feature": influential,
     }
 
 
