@@ -2685,6 +2685,66 @@ html[data-theme="dark"] .chat-fab-badge {
   color: var(--rw-green);
 }
 
+/* ── Report notifications ── */
+.notification-bell-wrap { position: relative; }
+.notification-bell-btn { position: relative; padding: 8px 10px !important; }
+.notification-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+.notification-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: min(360px, 92vw);
+  max-height: 420px;
+  overflow-y: auto;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.12);
+  z-index: 2000;
+}
+.notification-dropdown-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--gray-200);
+  font-size: 13px;
+}
+.notification-dropdown-head a { font-size: 12px; color: var(--rw-green); font-weight: 600; }
+.notification-empty { padding: 20px 14px; font-size: 12px; color: var(--gray-500); text-align: center; }
+.notification-item-link {
+  display: block;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--gray-100);
+  text-decoration: none;
+  color: inherit;
+}
+.notification-item-link:hover { background: var(--gray-50); }
+.notification-item-link.unread { background: #f0fdf4; }
+.notification-item-title { font-size: 13px; font-weight: 600; color: var(--gray-900); }
+.notification-item-link p {
+  font-size: 11px;
+  color: var(--gray-600);
+  margin: 4px 0 0;
+  line-height: 1.45;
+}
+.notification-meta { font-size: 10px; color: var(--gray-400); }
+
 /* ── Responsive: smaller screens ── */
 @media (max-width: 420px) {
   .chat-panel {

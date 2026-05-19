@@ -3,11 +3,12 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
          RadarChart, Radar, PolarGrid, PolarAngleAxis, Cell } from 'recharts'
 import { useApi } from '../hooks/useApi'
 import { useRole } from '../hooks/useRole'
+import { useAuth } from '../context/AuthContext'
 import { getDistricts, getDistrictSummary, getDistrictSectors, getDistrictGeojson } from '../api/client'
 import MetricCard from '../components/MetricCard'
 import DataTable, { computeColumnAverages } from '../components/DataTable'
 import ChoroplethMap from '../components/ChoroplethMap'
-import { generateDistrictReport } from '../utils/reportUtils'
+import { generateDistrictReport, senderFromAuthUser } from '../utils/reportUtils'
 import { IconBarChart, IconMap, IconScale, IconSliders, IconFileText } from '../components/Icons'
 
 const TABLE_COLS = ['adm3_en','cdi','cdi_district_rank','tier',
@@ -30,6 +31,7 @@ function normalize(val, arr) {
 
 export default function DistrictPlanner() {
   const { isDistrict, district: assignedDistrict, meta } = useRole()
+  const { user } = useAuth()
   const [district,    setDistrict]    = useState(assignedDistrict ?? '')
   const [compareA,    setCompareA]    = useState('')
   const [compareB,    setCompareB]    = useState('')
@@ -182,13 +184,16 @@ export default function DistrictPlanner() {
           <div className="card">
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14, flexWrap:'wrap', gap:8 }}>
               <div className="card-title" style={{ marginBottom:0 }}>Ranking Table</div>
-              <div style={{ display:'flex', gap:8 }}>
+              <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
                 <button
-                  onClick={() => generateDistrictReport(summary, sectors, district)}
-                  className="btn btn-primary"
+                  type="button"
+                  onClick={() => generateDistrictReport(summary, sectors, district, {
+                    sender: senderFromAuthUser(user),
+                  })}
+                  className="btn btn-secondary"
                   style={{ fontSize:12, display:'flex', alignItems:'center', gap:6 }}
                 >
-                  <IconFileText size={13} /> Submit Report to Ministry
+                  <IconFileText size={13} /> Preview PDF
                 </button>
                 <a
                   href={`data:text/csv;charset=utf-8,${encodeURIComponent(
@@ -198,6 +203,9 @@ export default function DistrictPlanner() {
                   className="btn btn-secondary"
                   style={{ fontSize:12 }}
                 >Export CSV</a>
+                <span style={{ fontSize:11, color:'var(--gray-400)' }}>
+                  Submit via <strong>Reports Inbox</strong>
+                </span>
               </div>
             </div>
             <DataTable rows={sectors ?? []} columns={TABLE_COLS} columnAverages={columnAverages} />

@@ -65,6 +65,9 @@ function LoginForm({ onSwitch }) {
     const result = await login(email, password)
     setLoading(false)
     if (result.ok) {
+      if (result.warning) {
+        sessionStorage.setItem('slds_login_warning', result.warning)
+      }
       navigate('/', { replace: true })
     } else {
       setError(result.error)

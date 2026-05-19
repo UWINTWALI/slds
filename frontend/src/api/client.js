@@ -2,15 +2,35 @@ import axios from 'axios'
 
 const api = axios.create({ baseURL: '/api' })
 
-// Attach JWT from localStorage on every request
-api.interceptors.request.use(config => {
+/** JWT from persisted session (required for reports & notifications). */
+export function getStoredToken() {
   try {
     const stored = localStorage.getItem('slds_user')
-    const token  = stored ? JSON.parse(stored).token : null
-    if (token) config.headers.Authorization = `Bearer ${token}`
-  } catch { /* ignore */ }
+    return stored ? JSON.parse(stored).token : null
+  } catch {
+    return null
+  }
+}
+
+// Attach JWT from localStorage on every request
+api.interceptors.request.use(config => {
+  const token = getStoredToken()
+  if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
+
+api.interceptors.response.use(
+  r => r,
+  err => {
+    const status = err.response?.status
+    const detail = err.response?.data?.detail
+    if (status === 401 && detail === 'Could not validate credentials') {
+      err.userMessage =
+        'Your session is invalid or expired. Sign out, ensure the API is running, then log in again.'
+    }
+    return Promise.reject(err)
+  },
+)
 
 // ── National ──────────────────────────────────────────────────────────────────
 export const getNationalSummary  = ()            => api.get('/national/summary').then(r => r.data)
@@ -53,3 +73,32 @@ export const simulateBatch       = (intervention, district) =>
   api.post('/simulation/batch', { intervention, district }).then(r => r.data)
 export const compareInvestments  = (district)   =>
   api.post('/simulation/compare', { district }).then(r => r.data)
+
+// ── Reports & notifications ───────────────────────────────────────────────────
+export const submitReport = (body) =>
+  api.post('/reports', body).then(r => r.data)
+
+export const getReports = (box = 'inbox') =>
+  api.get('/reports', { params: { box } }).then(r => r.data)
+
+export const getReport = (id) =>
+  api.get(`/reports/${id}`).then(r => r.data)
+
+export const markReportRead = (id) =>
+  api.post(`/reports/${id}/read`).then(r => r.data)
+
+export const getReportViewUrl = (id) => `/api/reports/${id}/view`
+
+// Returns list of national_admin users district officers can send reports to
+export const getMinistryRecipients = () =>
+  api.get('/reports/ministry-recipients').then(r => r.data)
+
+export const getNotifications = (unreadOnly = false) =>
+  api.get('/notifications', { params: { unread_only: unreadOnly } }).then(r => r.data)
+
+export const getUnreadNotificationCount = () =>
+  api.get('/notifications/unread-count').then(r => r.data)
+
+export const markNotificationRead = (id) =>
+  api.post(`/notifications/${id}/read`).then(r => r.data)
+

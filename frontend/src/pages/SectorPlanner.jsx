@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
          RadarChart, Radar, PolarGrid, PolarAngleAxis } from 'recharts'
 import { useApi } from '../hooks/useApi'
 import { useRole } from '../hooks/useRole'
+import { useAuth } from '../context/AuthContext'
 import {
   getDistricts, getSectorList, getSector, getSectorNeighbors,
   getDistrictSectors, getDistrictGeojson,
@@ -10,7 +11,7 @@ import {
 import MetricCard from '../components/MetricCard'
 import DataTable from '../components/DataTable'
 import ChoroplethMap from '../components/ChoroplethMap'
-import { generateSectorReport } from '../utils/reportUtils'
+import { generateSectorReport, senderFromAuthUser } from '../utils/reportUtils'
 import { fmt, normValue, getLagAlertType } from '../utils/sectorUtils'
 import { IconFileText, IconAlertTriangle, IconCheckCircle, IconInfo } from '../components/Icons'
 
@@ -26,8 +27,8 @@ const FEAT = {
 export default function SectorPlanner() {
   const { isSector, district: assignedDistrict, sector: assignedSector, meta } = useRole()
 
-  const [district,  setDistrict]  = useState(assignedDistrict ?? '')
-  const [sector,    setSector]    = useState(assignedSector   ?? '')
+  const [district, setDistrict] = useState(assignedDistrict ?? '')
+  const [sector,   setSector]   = useState(assignedSector   ?? '')
 
   const { data: districts } = useApi(getDistricts)
 
@@ -278,14 +279,18 @@ export default function SectorPlanner() {
             }
           </div>
 
-          {/* Export — PDF report */}
-          <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
+          {/* PDF Preview + CSV export (submit from Reports Inbox) */}
+          <div style={{ display:'flex', gap:12, flexWrap:'wrap', alignItems:'center' }}>
             <button
-              className="btn btn-primary"
-              onClick={() => generateSectorReport(sectorData, distSectors, sector, district)}
+              type="button"
+              className="btn btn-secondary"
+              disabled={!sectorData}
+              onClick={() => generateSectorReport(sectorData, distSectors, sector, district, {
+                sender: senderFromAuthUser(user),
+              })}
               style={{ display:'flex', alignItems:'center', gap:7 }}
             >
-              <IconFileText size={14} /> Generate Sector Report (PDF)
+              <IconFileText size={14} /> Preview PDF
             </button>
             <a
               href={`data:text/csv;charset=utf-8,${encodeURIComponent(
@@ -311,6 +316,9 @@ export default function SectorPlanner() {
             >
               Export CSV
             </a>
+            <span style={{ fontSize:11, color:'var(--gray-400)' }}>
+              To submit to your district, go to <strong>Reports Inbox</strong>.
+            </span>
           </div>
         </>
       )}

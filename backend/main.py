@@ -13,6 +13,8 @@ from database import Base, engine
 from routers import national, districts, sectors, simulation
 from routers import auth, users
 from routers import assistant
+from routers import reports
+import models.report  # noqa: F401 — register ORM tables with Base.metadata
 
 
 @asynccontextmanager
@@ -49,6 +51,9 @@ app.include_router(users.router, prefix="/api")
 
 # AI assistant
 app.include_router(assistant.router, prefix="/api")
+
+# Reports & notifications
+app.include_router(reports.router, prefix="/api")
 
 
 @app.get("/api/health")

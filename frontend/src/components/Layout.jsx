@@ -7,14 +7,19 @@ import logo from '../logo/slds_logo.png'
 import {
   IconHome, IconGlobe, IconMap, IconMapPin,
   IconFlask, IconUsers, IconSettings, IconLogOut, IconSun, IconMoon,
+  IconFileText,
 } from './Icons'
+import NotificationBell from './NotificationBell'
 
 /* ── Role-specific navigation  */
+const REPORTS_NAV = { to: '/reports', Icon: IconFileText, label: 'Reports Inbox' }
+
 const ROLE_NAV = {
   national_admin: [
     { to: '/',           Icon: IconHome,    label: 'Operations Center' },
     { to: '/national',   Icon: IconGlobe,   label: 'National Map' },
     { to: '/district',   Icon: IconMap,     label: 'District Reports' },
+    REPORTS_NAV,
     { to: '/simulation', Icon: IconFlask,   label: 'Simulation' },
     { to: '/users',      Icon: IconUsers,   label: 'User Management' },
     { to: '/settings',   Icon: IconSettings, label: 'Settings' },
@@ -23,12 +28,14 @@ const ROLE_NAV = {
     { to: '/',           Icon: IconHome,    label: 'District Center' },
     { to: '/district',   Icon: IconMap,     label: 'District Overview' },
     { to: '/sector',     Icon: IconMapPin,  label: 'Sector Reports' },
+    REPORTS_NAV,
     { to: '/simulation', Icon: IconFlask,   label: 'Simulation' },
     { to: '/settings',   Icon: IconSettings, label: 'Settings' },
   ],
   sector_officer: [
     { to: '/',           Icon: IconHome,    label: 'Sector Dashboard' },
     { to: '/sector',     Icon: IconMapPin,  label: 'My Sector' },
+    REPORTS_NAV,
     { to: '/simulation', Icon: IconFlask,   label: 'Simulate Investment' },
     { to: '/settings',   Icon: IconSettings, label: 'Settings' },
   ],
@@ -37,6 +44,7 @@ const ROLE_NAV = {
     { to: '/national',   Icon: IconGlobe,   label: 'National Overview' },
     { to: '/district',   Icon: IconMap,     label: 'District Planner' },
     { to: '/sector',     Icon: IconMapPin,  label: 'Sector Planner' },
+    REPORTS_NAV,
     { to: '/simulation', Icon: IconFlask,   label: 'Simulation' },
     { to: '/settings',   Icon: IconSettings, label: 'Settings' },
   ],
@@ -48,6 +56,27 @@ const ROLE_SECTION = {
   district_officer: 'District Administration',
   sector_officer:   'Sector Administration',
   analyst:          'Research & Analysis',
+}
+
+function LoginWarningBanner() {
+  const [msg, setMsg] = useState(() => sessionStorage.getItem('slds_login_warning'))
+  if (!msg) return null
+  return (
+    <div className="alert alert-warning" style={{ marginBottom: 16, fontSize: 12 }}>
+      {msg}
+      <button
+        type="button"
+        className="btn btn-secondary btn-sm"
+        style={{ marginLeft: 12, fontSize: 11 }}
+        onClick={() => {
+          sessionStorage.removeItem('slds_login_warning')
+          setMsg(null)
+        }}
+      >
+        Dismiss
+      </button>
+    </div>
+  )
 }
 
 export default function Layout() {
@@ -189,6 +218,7 @@ export default function Layout() {
           </div>
           {user && (
             <div className="header-actions" ref={menuRef}>
+              <NotificationBell />
               <button className="header-theme-btn" onClick={toggleTheme} type="button">
                 {theme === 'dark'
                   ? <><IconSun size={16} /><span>Light</span></>
@@ -226,6 +256,7 @@ export default function Layout() {
           )}
         </div>
         <div className="page-body">
+          <LoginWarningBanner />
           <Outlet />
         </div>
       </div>

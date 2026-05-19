@@ -2,7 +2,9 @@ import { createContext, useContext, useState, useCallback } from 'react'
 
 const AuthContext = createContext(null)
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+/** Same origin as axios (/api proxy in dev); override with VITE_API_URL if needed. */
+const API_BASE = import.meta.env.VITE_API_URL ?? ''
+const apiUrl = (path) => `${API_BASE}${path}`
 
 /**
  * Demo user credentials for the landing page quick-fill buttons.
@@ -16,10 +18,10 @@ export const DEMO_USERS = [
     password:  'admin',
     role:      'national_admin',
     name:      'Ministry Office',
-    title:     'MINALOC / RISA',
+    title:     'MINIFRA Officer',
     district:  null,
     sector:    null,
-    ministry:  'MINALOC',
+    ministry:  'MINIFRA',
   },
   {
     username:  'gasabo',
@@ -95,6 +97,7 @@ function sessionFromApiUser(apiUser, token) {
     sector:   apiUser.sector   ?? null,
     ministry: apiUser.ministry ?? null,
     token,
+    demoMode: false,
   }
 }
 
@@ -113,6 +116,7 @@ function demoLogin(email, password) {
     sector:   match.sector,
     ministry: match.ministry ?? null,
     token:    null,
+    demoMode: true,
   }
 }
 
@@ -137,7 +141,7 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (email, password) => {
     // --- Try the real API ---
     try {
-      const res = await fetch(`${API_BASE}/api/auth/login`, {
+      const res = await fetch(apiUrl('/api/auth/login'), {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ email: email.trim(), password }),
@@ -148,7 +152,7 @@ export function AuthProvider({ children }) {
         const session = sessionFromApiUser(data.user, data.access_token)
         localStorage.setItem('slds_user', JSON.stringify(session))
         setUser(session)
-        return { ok: true }
+        return { ok: true, demoMode: false }
       }
 
       if (res.status === 401) {
@@ -159,12 +163,17 @@ export function AuthProvider({ children }) {
       return { ok: false, error: body.detail ?? 'Login failed. Please try again.' }
 
     } catch {
-      // API unreachable — fall back to demo credentials
+      // API unreachable — fall back to demo credentials (maps only; reports need API)
       const session = demoLogin(email, password)
       if (session) {
         localStorage.setItem('slds_user', JSON.stringify(session))
         setUser(session)
-        return { ok: true }
+        return {
+          ok: true,
+          demoMode: true,
+          warning:
+            'Server offline — you can browse data, but sending reports requires the API. Start the backend and sign in again.',
+        }
       }
       return { ok: false, error: 'Invalid email or password.' }
     }
@@ -174,7 +183,7 @@ export function AuthProvider({ children }) {
     const token = user?.token
     if (token) {
       try {
-        await fetch(`${API_BASE}/api/auth/logout`, {
+        await fetch(apiUrl('/api/auth/logout'), {
           method:  'POST',
           headers: { Authorization: `Bearer ${token}` },
         })
@@ -202,7 +211,7 @@ export function AuthProvider({ children }) {
    */
   const register = useCallback(async (payload) => {
     try {
-      const res = await fetch(`${API_BASE}/api/auth/register`, {
+      const res = await fetch(apiUrl('/api/auth/register'), {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify(payload),

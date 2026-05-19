@@ -12,6 +12,8 @@ import SectorPlanner    from './pages/SectorPlanner'
 import Simulation       from './pages/Simulation'
 import UserManagement   from './pages/UserManagement'
 import Settings         from './pages/Settings'
+import Reports          from './pages/Reports'
+import ReportView       from './pages/ReportView'
 
 /**
  * Guards a route by allowed roles.
@@ -83,6 +85,10 @@ function AppRoutes() {
               </RoleRoute>
             }
           />
+
+          {/* Reports inbox — all authenticated users */}
+          <Route path="reports" element={<Reports />} />
+          <Route path="reports/:id" element={<ReportView />} />
 
           {/* Profile settings — all authenticated users */}
           <Route path="settings" element={<Settings />} />

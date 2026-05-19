@@ -7,83 +7,186 @@
 const BRAND_CSS = `
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: 'Segoe UI', Arial, sans-serif;
+    font-family: 'Segoe UI', system-ui, sans-serif;
     font-size: 13px;
-    color: #111;
+    color: #1a1a1a;
     background: #fff;
-    padding: 0;
+    line-height: 1.5;
   }
-  .page { padding: 32px 40px; max-width: 900px; margin: 0 auto; }
+  .page { padding: 36px 44px; max-width: 820px; margin: 0 auto; }
+
   .header {
     display: flex; justify-content: space-between; align-items: flex-start;
-    border-bottom: 3px solid #00A550; padding-bottom: 16px; margin-bottom: 24px;
+    gap: 20px;
+    padding-bottom: 18px; margin-bottom: 22px;
+    border-bottom: 1px solid #e8ecef;
   }
-  .header-left h1 { font-size: 22px; color: #00A550; letter-spacing: -.3px; margin-bottom: 4px; }
-  .header-left p  { font-size: 12px; color: #666; }
-  .header-right   { text-align: right; font-size: 11px; color: #999; line-height: 1.6; }
-  .header-right strong { color: #1e3a5f; font-size: 13px; }
+  .header-left h1 { font-size: 20px; font-weight: 600; color: #111; letter-spacing: -.02em; margin-bottom: 6px; }
+  .header-left p  { font-size: 12px; color: #6b7280; }
+  .origin-card {
+    text-align: right; font-size: 11px; color: #6b7280; line-height: 1.55;
+    padding: 10px 14px; border-radius: 8px;
+    background: #f8faf9; border: 1px solid #e5ebe8;
+    min-width: 200px;
+  }
+  .origin-card strong { display: block; color: #111; font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .origin-card .origin-label { font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: #9ca3af; margin-bottom: 6px; }
 
-  section { margin-bottom: 24px; }
+  section { margin-bottom: 22px; }
   section h2 {
-    font-size: 13px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .07em; color: #1e3a5f;
-    border-left: 3px solid #00A550; padding-left: 8px;
-    margin-bottom: 12px;
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .08em; color: #374151;
+    padding-bottom: 6px; margin-bottom: 12px;
+    border-bottom: 1px solid #eef1f3;
   }
 
-  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; border-radius: 8px; overflow: hidden; border: 1px solid #eef1f3; }
   thead th {
-    background: #f4f4f5; padding: 8px 12px; text-align: left;
-    font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .05em;
-    border-bottom: 1px solid #ddd; color: #555;
+    background: #f6f8f7; padding: 9px 12px; text-align: left;
+    font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: .05em;
+    color: #4b5563; border-bottom: 1px solid #e5e7eb;
   }
-  tbody td { padding: 8px 12px; border-bottom: 1px solid #efefef; }
-  tbody tr:nth-child(even) td { background: #fafafa; }
+  tbody td { padding: 9px 12px; border-bottom: 1px solid #f0f2f4; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:nth-child(even) td { background: #fafbfb; }
 
-  .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 8px; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 8px; }
   .kpi-box {
-    border: 1px solid #e4e4e7; border-radius: 6px; padding: 12px 14px;
-    background: #fafafa;
+    border: 1px solid #eef1f3; border-radius: 8px; padding: 12px 14px;
+    background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.03);
   }
-  .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #71717a; margin-bottom: 4px; }
-  .kpi-value { font-size: 20px; font-weight: 700; color: #111; }
-  .kpi-sub   { font-size: 10px; color: #a1a1aa; margin-top: 2px; }
+  .kpi-label { font-size: 9px; text-transform: uppercase; letter-spacing: .07em; color: #9ca3af; margin-bottom: 4px; }
+  .kpi-value { font-size: 18px; font-weight: 600; color: #111; }
+  .kpi-sub   { font-size: 10px; color: #9ca3af; margin-top: 2px; }
 
   .badge {
-    display: inline-block; padding: 2px 10px; border-radius: 4px;
-    font-size: 11px; font-weight: 700;
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 10px; font-weight: 600;
+    border: 1px solid #d1d5db; color: #374151; background: #f9fafb;
   }
-  .badge-lagging    { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
-  .badge-developing { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
-  .badge-progressing{ background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-  .badge-advanced   { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
-  .badge-warning    { background: #fff7ed; color: #c2410c; border: 1px solid #fdba74; }
 
   .alert-box {
-    padding: 10px 14px; border-radius: 6px; font-size: 12px;
-    margin-bottom: 12px; border: 1px solid;
+    padding: 10px 14px; font-size: 12px; border-radius: 6px;
+    margin-bottom: 12px; background: #f8faf9;
+    border: 1px solid #e5ebe8; color: #374151;
   }
-  .alert-danger  { background: #fef2f2; border-color: #fecaca; color: #7f1d1d; }
-  .alert-warning { background: #fffbeb; border-color: #fde68a; color: #78350f; }
-  .alert-success { background: #f0fdf4; border-color: #bbf7d0; color: #14532d; }
+  .alert-danger  { border-color: #fecaca; background: #fef8f8; }
+  .alert-warning { border-color: #fde68a; background: #fffbeb; }
+  .alert-success { border-color: #bbf7d0; background: #f0fdf4; }
+
+  .cover-note {
+    padding: 14px 16px; font-size: 12px; line-height: 1.65;
+    color: #374151; background: #fafbfb;
+    border: 1px solid #e8ecef; border-radius: 8px;
+    white-space: pre-wrap;
+  }
+
+  .meta-table td:first-child { color: #9ca3af; width: 140px; font-size: 11px; }
+  .meta-table td:last-child { color: #111; font-size: 12px; }
 
   .bar-wrap { display: flex; align-items: center; gap: 10px; }
-  .bar-track { flex: 1; height: 10px; background: #e4e4e7; border-radius: 4px; overflow: hidden; }
-  .bar-fill  { height: 100%; border-radius: 4px; }
-  .bar-label { font-size: 11px; width: 50px; text-align: right; font-weight: 600; }
-
-  .footer {
-    margin-top: 36px; padding-top: 12px; border-top: 1px solid #e4e4e7;
-    display: flex; justify-content: space-between;
-    font-size: 10px; color: #a1a1aa;
-  }
+  .bar-track { flex: 1; height: 6px; background: #eef1f3; border-radius: 3px; overflow: hidden; }
+  .bar-fill  { height: 100%; border-radius: 3px; background: #00A550; }
+  .bar-label { font-size: 10px; width: 56px; text-align: right; font-weight: 500; color: #6b7280; }
 
   @media print {
-    @page { margin: 18mm 20mm; }
+    @page { margin: 16mm 18mm; size: A4; }
     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .no-print { display: none !important; }
+    .kpi-box { box-shadow: none; }
   }
 `
+
+function escapeHtml(text) {
+  return String(text ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+/** Build sender profile from logged-in session user. */
+export function senderFromAuthUser(user) {
+  if (!user) return null
+  return {
+    fullName: user.name,
+    title:    user.title,
+    role:     user.role,
+    district: user.district,
+    sector:   user.sector,
+    ministry: user.ministry,
+  }
+}
+
+function roleLabel(role) {
+  const map = {
+    sector_officer:   'Sector Office',
+    district_officer: 'District Office',
+    national_admin:   'Ministry Office',
+    analyst:          'Policy Analyst',
+  }
+  return map[role] ?? 'Office'
+}
+
+/** Where the document originates (no destination). */
+export function formatDocumentOrigin(sender) {
+  if (!sender) return 'Administrative office'
+  const parts = []
+  if (sender.sector && sender.district) {
+    parts.push(`${sender.sector} Sector, ${sender.district} District`)
+  } else if (sender.district) {
+    parts.push(`${sender.district} District`)
+  } else if (sender.ministry) {
+    parts.push(sender.ministry)
+  }
+  parts.push(roleLabel(sender.role))
+  return parts.filter(Boolean).join(' · ')
+}
+
+function buildCoverNoteSection(coverNote) {
+  const text = (coverNote ?? '').trim()
+  if (!text) return ''
+  return `
+    <section>
+      <h2>Cover note</h2>
+      <div class="cover-note">${escapeHtml(text)}</div>
+    </section>
+  `
+}
+
+function buildIssuerSection(sender) {
+  if (!sender?.fullName) return ''
+  const dateStr = new Date().toLocaleDateString('en-RW', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  })
+  return `
+    <section>
+      <h2>Issued by</h2>
+      <table class="meta-table">
+        <tbody>
+          <tr><td>Name</td><td><strong>${escapeHtml(sender.fullName)}</strong></td></tr>
+          ${sender.title ? `<tr><td>Title</td><td>${escapeHtml(sender.title)}</td></tr>` : ''}
+          <tr><td>Origin</td><td>${escapeHtml(formatDocumentOrigin(sender))}</td></tr>
+          <tr><td>Date</td><td>${dateStr}</td></tr>
+        </tbody>
+      </table>
+    </section>
+  `
+}
+
+function buildOriginCard(sender) {
+  if (!sender?.fullName) return ''
+  const origin = formatDocumentOrigin(sender)
+  const titleLine = sender.title ? `<br>${escapeHtml(sender.title)}` : ''
+  return `
+    <div class="origin-card">
+      <div class="origin-label">Document from</div>
+      <strong>${escapeHtml(sender.fullName)}</strong>
+      ${titleLine}
+      <br>${escapeHtml(origin)}
+    </div>
+  `
+}
 
 function tierBadge(tier) {
   if (!tier) return ''
@@ -93,6 +196,23 @@ function tierBadge(tier) {
 
 function pct(v) {
   return v != null ? `${(v * 100).toFixed(1)}%` : '—'
+}
+
+/** Full HTML document for storage / platform viewing */
+export function wrapReportDocument(title, bodyHTML) {
+  return `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>${title}</title>
+      <style>${BRAND_CSS}</style>
+    </head>
+    <body>
+      <div class="page">
+        ${bodyHTML}
+      </div>
+    </body>
+    </html>`
 }
 
 function openPrintWindow(title, bodyHTML) {
@@ -112,10 +232,6 @@ function openPrintWindow(title, bodyHTML) {
     <body>
       <div class="page">
         ${bodyHTML}
-        <div class="footer">
-          <span>SLDS — Sector-Level Development Simulator · Rwanda 2026</span>
-          <span>CBC Team · Generated ${new Date().toLocaleString()}</span>
-        </div>
       </div>
       <div class="no-print" style="position:fixed;bottom:20px;right:20px;display:flex;gap:8px;">
         <button onclick="window.print()"
@@ -136,8 +252,9 @@ function openPrintWindow(title, bodyHTML) {
 /* ─────────────────────────────────────────────────
    SECTOR OFFICER REPORT
 ───────────────────────────────────────────────── */
-export function generateSectorReport(sectorData, distSectors, sector, district) {
-  if (!sectorData) return
+export function buildSectorReportBody(sectorData, distSectors, sector, district, options = {}) {
+  if (!sectorData) return null
+  const { sender = null, coverNote = '' } = options
 
   const gap     = sectorData.gap_from_district ?? 0
   const distAvg = sectorData.district_avg_cdi  ?? 0
@@ -189,12 +306,10 @@ export function generateSectorReport(sectorData, distSectors, sector, district) 
         <h1>Sector Development Report</h1>
         <p>${sector} Sector &nbsp;·&nbsp; ${district} District &nbsp;·&nbsp; ${new Date().toLocaleDateString()}</p>
       </div>
-      <div class="header-right">
-        <strong>SLDS Platform</strong><br>
-        Sector Officer Report<br>
-        Prepared for MINALOC / District Office
-      </div>
+      ${buildOriginCard(sender)}
     </div>
+
+    ${buildCoverNoteSection(coverNote)}
 
     <section>
       <h2>Development Status</h2>
@@ -274,27 +389,39 @@ export function generateSectorReport(sectorData, distSectors, sector, district) 
       </table>
     </section>
 
-    <section>
-      <h2>Submitted By</h2>
-      <table>
-        <tbody>
-          <tr><td style="color:#888;width:180px">Sector</td><td><strong>${sector}</strong></td></tr>
-          <tr><td style="color:#888">District</td><td>${district}</td></tr>
-          <tr><td style="color:#888">Report Date</td><td>${new Date().toLocaleDateString('en-RW', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}</td></tr>
-          <tr><td style="color:#888">Submitted To</td><td>District Office / MINALOC / MINIFRA</td></tr>
-        </tbody>
-      </table>
-    </section>
+    ${buildIssuerSection(sender)}
   `
 
-  openPrintWindow(`Sector Report — ${sector}`, bodyHTML)
+  return bodyHTML
+}
+
+export function getSectorReportDocument(sectorData, distSectors, sector, district, options = {}) {
+  const body = buildSectorReportBody(sectorData, distSectors, sector, district, options)
+  if (!body) return null
+  const title = `Sector Report — ${sector}`
+  const coverNote = (options.coverNote ?? '').trim()
+  return {
+    title,
+    html: wrapReportDocument(title, body),
+    reportType: 'sector',
+    district,
+    sector,
+    payload: coverNote ? { cover_note: coverNote } : null,
+  }
+}
+
+export function generateSectorReport(sectorData, distSectors, sector, district, options = {}) {
+  const body = buildSectorReportBody(sectorData, distSectors, sector, district, options)
+  if (!body) return
+  openPrintWindow(`Sector Report — ${sector}`, body)
 }
 
 /* ─────────────────────────────────────────────────
    DISTRICT OFFICER REPORT  (to MINALOC/MINIFRA)
 ───────────────────────────────────────────────── */
-export function generateDistrictReport(summary, sectors, district) {
-  if (!sectors?.length) return
+export function buildDistrictReportBody(summary, sectors, district, options = {}) {
+  if (!sectors?.length) return null
+  const { sender = null, coverNote = '' } = options
 
   const ranked  = [...sectors].sort((a, b) => a.cdi - b.cdi)
   const lagging = sectors.filter(s => s.is_lagging)
@@ -326,14 +453,12 @@ export function generateDistrictReport(summary, sectors, district) {
     <div class="header">
       <div class="header-left">
         <h1>District Development Report</h1>
-        <p>${district} District &nbsp;·&nbsp; ${new Date().toLocaleDateString()} &nbsp;·&nbsp; For submission to MINALOC / MINIFRA</p>
+        <p>${district} District · ${new Date().toLocaleDateString()}</p>
       </div>
-      <div class="header-right">
-        <strong>SLDS Platform</strong><br>
-        District Officer Report<br>
-        Official submission document
-      </div>
+      ${buildOriginCard(sender)}
     </div>
+
+    ${buildCoverNoteSection(coverNote)}
 
     <section>
       <h2>District Summary</h2>
@@ -376,8 +501,8 @@ export function generateDistrictReport(summary, sectors, district) {
     <section>
       <h2>Investment Request</h2>
       <p style="font-size:12px;color:#444;line-height:1.7;">
-        The ${district} District Office formally requests MINALOC / MINIFRA to review the above sector data
-        and consider targeted infrastructure investments for the sectors identified as lagging.
+        The above sector data is presented for review, with targeted infrastructure investments
+        recommended for the sectors identified as lagging.
         Specifically, the following infrastructure types are critically missing in the underserved areas.
       </p>
       <table>
@@ -391,28 +516,39 @@ export function generateDistrictReport(summary, sectors, district) {
       </table>
     </section>
 
-    <section>
-      <h2>Submitted By</h2>
-      <table>
-        <tbody>
-          <tr><td style="color:#888;width:200px">District</td><td><strong>${district}</strong></td></tr>
-          <tr><td style="color:#888">Report Date</td><td>${new Date().toLocaleDateString('en-RW', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}</td></tr>
-          <tr><td style="color:#888">Submitted To</td><td>MINALOC / MINIFRA — National Level</td></tr>
-          <tr><td style="color:#888">Platform</td><td>SLDS — Sector-Level Development Simulator v1.0</td></tr>
-        </tbody>
-      </table>
-    </section>
+    ${buildIssuerSection(sender)}
   `
 
-  openPrintWindow(`District Report — ${district}`, bodyHTML)
+  return bodyHTML
+}
+
+export function getDistrictReportDocument(summary, sectors, district, options = {}) {
+  const body = buildDistrictReportBody(summary, sectors, district, options)
+  if (!body) return null
+  const title = `District Report — ${district}`
+  const coverNote = (options.coverNote ?? '').trim()
+  return {
+    title,
+    html: wrapReportDocument(title, body),
+    reportType: 'district',
+    district,
+    sector: null,
+    payload: coverNote ? { cover_note: coverNote } : null,
+  }
+}
+
+export function generateDistrictReport(summary, sectors, district, options = {}) {
+  const body = buildDistrictReportBody(summary, sectors, district, options)
+  if (!body) return
+  openPrintWindow(`District Report — ${district}`, body)
 }
 
 /* ─────────────────────────────────────────────────
    MINISTRY OFFICER — PUBLISH UNDERSERVED LIST
 ───────────────────────────────────────────────── */
-export function generateMinistryPublication(sectors, selectedSectors, assignments) {
+export function buildMinistryPublicationBody(sectors, selectedSectors, assignments) {
   const list = sectors.filter(s => selectedSectors.includes(s.adm3_en))
-  if (!list.length) return
+  if (!list.length) return null
 
   const rows = list.map(s => `
     <tr>
@@ -473,5 +609,30 @@ export function generateMinistryPublication(sectors, selectedSectors, assignment
     </section>
   `
 
-  openPrintWindow('Ministry Publication — Underserved Sectors', bodyHTML)
+  return bodyHTML
+}
+
+export function getMinistryPublicationDocument(sectors, selectedSectors, assignments) {
+  const body = buildMinistryPublicationBody(sectors, selectedSectors, assignments)
+  if (!body) return null
+  const title = 'Ministry Publication — Underserved Sectors'
+  const list = sectors.filter(s => selectedSectors.includes(s.adm3_en))
+  return {
+    title,
+    html: wrapReportDocument(title, body),
+    reportType: 'publication',
+    district: null,
+    sector: null,
+    payload: {
+      sector_names: selectedSectors,
+      sectors: list.map(s => ({ adm3_en: s.adm3_en, district: s.adm2_en })),
+      assignments,
+    },
+  }
+}
+
+export function generateMinistryPublication(sectors, selectedSectors, assignments) {
+  const body = buildMinistryPublicationBody(sectors, selectedSectors, assignments)
+  if (!body) return
+  openPrintWindow('Ministry Publication — Underserved Sectors', body)
 }

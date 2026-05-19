@@ -7,6 +7,7 @@
  *  sector_officer   → Sector Monitoring Panel (infra status + poverty)
  *  analyst          → Research & Analysis Center
  */
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis } from 'recharts'
 import { useApi } from '../hooks/useApi'
@@ -19,7 +20,8 @@ import {
 } from '../api/client'
 import MetricCard from '../components/MetricCard'
 import UnderservedSectorList from '../components/UnderservedSectorList'
-import { generateMinistryPublication } from '../utils/reportUtils'
+import { generateMinistryPublication, getMinistryPublicationDocument } from '../utils/reportUtils'
+import { submitReportDocument } from '../utils/reportSubmit'
 import {
   IconGlobe, IconMap, IconMapPin, IconFlask, IconUsers,
   IconAlertTriangle, IconCheckCircle, IconInfo,
@@ -103,6 +105,7 @@ function MinistryHome() {
   const { user }   = useAuth()
   const navigate   = useNavigate()
   const meta       = ROLE_META.national_admin
+  const [publishing, setPublishing] = useState(false)
 
   const { data: summary, loading: l1 } = useApi(getNationalSummary)
   const { data: sectors, loading: l2 } = useApi(getNationalSectors)
@@ -169,16 +172,41 @@ function MinistryHome() {
             footer={
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button
+                  onClick={async () => {
+                    if (!sectors || !laggingList.length) return
+                    const selected = laggingList.map(s => s.adm3_en)
+                    const doc = getMinistryPublicationDocument(sectors, selected, {})
+                    if (!doc) return
+                    setPublishing(true)
+                    try {
+                      const res = await submitReportDocument(doc)
+                      navigate(`/reports/${res.id}`)
+                    } catch (e) {
+                      const msg = e.response?.data?.detail || e.message || 'Publication failed'
+                      alert(typeof msg === 'string' ? msg : JSON.stringify(msg))
+                    } finally {
+                      setPublishing(false)
+                    }
+                  }}
+                  className="btn btn-primary"
+                  disabled={!sectors || !laggingList.length || publishing}
+                  style={{ fontSize: 12, background: meta.accent, borderColor: meta.accent, display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  <IconShare size={13} />
+                  {publishing ? 'Publishing…' : 'Publish & Notify Districts'}
+                </button>
+                <button
+                  type="button"
                   onClick={() => sectors && laggingList.length && generateMinistryPublication(
                     sectors,
                     laggingList.map(s => s.adm3_en),
                     {}
                   )}
-                  className="btn btn-primary"
+                  className="btn btn-secondary"
                   disabled={!sectors || !laggingList.length}
-                  style={{ fontSize: 12, background: meta.accent, borderColor: meta.accent, display: 'flex', alignItems: 'center', gap: 6 }}
+                  style={{ fontSize: 12 }}
                 >
-                  <IconShare size={13} /> Publish Underserved Sectors
+                  Preview PDF
                 </button>
                 <button
                   onClick={() => navigate('/simulation')}

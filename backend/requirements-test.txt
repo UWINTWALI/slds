@@ -1,15 +1,11 @@
-# Test dependencies — install with:
-#   pip install -r requirements-test.txt
+# Test dependencies: install with:
+# pip install -r requirements-test.txt
 pytest==8.2.2
 httpx==0.27.0
 
 
-cd frontend
-npm test
-
-cd backend
-python -m pytest tests/test_api.py tests/test_system.py -v
-
-
-
-locust -f tests/locustfile.py --host=http://localhost:8000
+# cd frontend
+# npm test
+# cd backend
+# python -m pytest tests/test_api.py tests/test_system.py -v
+# locust -f tests/locustfile.py --host=http://localhost:8000
