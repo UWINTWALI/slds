@@ -1,12 +1,6 @@
-import sys
+# backend/main.py
 import os
-# Add the parent directory to Python path so it can find database.py
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from contextlib import asynccontextmanager
-
-from database import Base, engine
-from schemas import YourSchema
 
 # Load .env before anything else so os.getenv() picks up all variables
 from dotenv import load_dotenv
@@ -17,7 +11,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.exc import ProgrammingError
 
+# These are in the same folder, so direct imports work
 from database import Base, engine
+from schemas import YourSchema  # if needed
 from routers import national, districts, sectors, simulation
 from routers import auth, users
 from routers import assistant
