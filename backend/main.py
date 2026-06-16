@@ -12,7 +12,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import ProgrammingError
 
 # These are in the same folder, so direct imports work
-from database import Base, engine
+from backend.database import Base, engine
 from schemas import YourSchema  # if needed
 from routers import national, districts, sectors, simulation
 from routers import auth, users
