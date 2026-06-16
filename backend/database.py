@@ -2,16 +2,20 @@
 Async SQLAlchemy engine and session factory for the SLDS application.
 """
 
+
 import os
 from typing import AsyncGenerator
 
+
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
+
 
 DATABASE_URL: str = os.getenv(
     "DATABASE_URL",
     "postgresql+asyncpg://slds_user:slds_pass@localhost:5432/slds_db",
 )
+
 
 engine = create_async_engine(
     DATABASE_URL,
@@ -19,7 +23,9 @@ engine = create_async_engine(
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,
+    driver="asyncpg",  # Add this line
 )
+
 
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,
@@ -30,8 +36,10 @@ AsyncSessionLocal = async_sessionmaker(
 )
 
 
+
 class Base(DeclarativeBase):
     pass
+
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
