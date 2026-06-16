@@ -14,6 +14,8 @@ services:
         value: 3.11.0
       - key: PORT
         value: 8000
+      - key: DATABASE_URL
+        sync: false  # Set this manually in the dashboard
       # Add any other environment variables your app needs
       # - key: DATABASE_URL
       #   sync: false

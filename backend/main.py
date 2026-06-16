@@ -1,4 +1,12 @@
+import sys
+import os
+# Add the parent directory to Python path so it can find database.py
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from contextlib import asynccontextmanager
+
+from database import Base, engine
+from schemas import YourSchema
 
 # Load .env before anything else so os.getenv() picks up all variables
 from dotenv import load_dotenv
