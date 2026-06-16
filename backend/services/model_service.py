@@ -14,7 +14,8 @@ except ImportError:
 
 from services.data_service import get_df, _find_col
 
-MODELS = Path(r"C:/Users/HP/Desktop/Proposal_Final/models")
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+MODELS      = BACKEND_DIR / "data" / "models"
 
 
 @lru_cache(maxsize=1)
@@ -22,6 +23,15 @@ def get_model() -> dict | None:
     if joblib is None:
         return None
     p = MODELS / "poverty_model.pkl"
+    if p.exists():
+        return joblib.load(p)
+    return None
+
+@lru_cache(maxsize=1)
+def get_metrics_model() -> dict | None:
+    if joblib is None:
+        return None
+    p = MODELS / "poverty_model_01.pkl"
     if p.exists():
         return joblib.load(p)
     return None
@@ -112,7 +122,7 @@ def simulate_batch(intervention: dict, district: str | None = None) -> list[dict
 
 
 def model_performance() -> dict | None:
-    bundle = get_model()
+    bundle = get_metrics_model()
     if bundle is None:
         return None
     model    = bundle["model"]
@@ -121,15 +131,53 @@ def model_performance() -> dict | None:
     avail    = [f for f in features if f in df.columns]
     pov_col  = next((c for c in ("poverty_rate", "predicted_poverty_rate")
                      if c in df.columns), None)
+
+    def _get_feature_importances(model_obj):
+        if hasattr(model_obj, "feature_importances_"):
+            return list(map(float, model_obj.feature_importances_))
+        if hasattr(model_obj, "named_steps"):
+            inner = model_obj.named_steps.get("model")
+            if inner is not None and hasattr(inner, "coef_"):
+                return list(map(lambda x: float(abs(x)), inner.coef_))
+        if hasattr(model_obj, "coef_"):
+            return list(map(lambda x: float(abs(x)), model_obj.coef_))
+        return [0.0] * len(features)
+
+    raw_importances = dict(zip(features, _get_feature_importances(model)))
+    total_importance = sum(raw_importances.values())
+    importances = {
+        k: (v / total_importance if total_importance > 0 else 0.0)
+        for k, v in raw_importances.items()
+    }
+
     if not avail or not pov_col:
-        return {"features": features, "trained": True}
+        loocv_r2  = bundle.get("loocv_r2")
+        loocv_mae = bundle.get("loocv_mae")
+        n_samples = len(bundle.get("raw_pred_baseline", []))
+        result = {
+            "features":    features,
+            "trained":     True,
+            "n_samples":   int(n_samples),
+            "n_features":  len(features),
+            "importances": dict(sorted(importances.items(), key=lambda x: -x[1])),
+        }
+        if loocv_r2 is not None:
+            result["r2"] = round(float(loocv_r2), 4)
+        if loocv_mae is not None:
+            result["mae"] = round(float(loocv_mae), 4)
+        return result
 
     from sklearn.metrics import r2_score, mean_absolute_error
     X      = df[avail].fillna(0)
     y_pred = model.predict(X)
     y_true = df[pov_col].fillna(df[pov_col].median())
 
-    importances = dict(zip(features, map(float, model.feature_importances_)))
+    raw_importances = dict(zip(features, _get_feature_importances(model)))
+    total_importance = sum(raw_importances.values())
+    importances = {
+        k: (v / total_importance if total_importance > 0 else 0.0)
+        for k, v in raw_importances.items()
+    }
     return {
         "r2":          round(float(r2_score(y_true, y_pred)), 4),
         "mae":         round(float(mean_absolute_error(y_true, y_pred)), 4),

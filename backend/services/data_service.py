@@ -11,10 +11,13 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 
-PROCESSED = Path(r"C:/Users/HP/Desktop/Proposal_Final/processed")
-DATASETS  = Path(r"C:/Users/HP/Desktop/Proposal_Final/Datasets")
-SHP_ADM3  = (DATASETS / "rwa_adm_2006_administrative_boundary"
-             / "rwa_adm3_2006_NISR_WGS1984_20181002.shp")
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+DATA_DIR    = BACKEND_DIR / "data"
+
+PROCESSED   = DATA_DIR / "processed"
+DATASETS    = DATA_DIR / "datasets"
+SHP_ADM3    = (DATASETS / "rwa_adm_2006_administrative_boundary"
+               / "rwa_adm3_2006_NISR_WGS1984_20181002.shp")
 
 CDI_WEIGHTS = {
     "road_density_km_per_km2": 0.25,

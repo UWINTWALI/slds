@@ -171,25 +171,6 @@ export default function NationalOverview() {
                   <MetricCard label="Training rows" value={perf.n_samples} />
                   <MetricCard label="Features"      value={perf.n_features} />
                 </div>
-                {perf.importances && (
-                  <>
-                    <div style={{ fontSize:12, fontWeight:500, marginBottom:8, color:'var(--gray-600)' }}>
-                      Feature Importance
-                    </div>
-                    <ResponsiveContainer width="100%" height={160}>
-                      <BarChart
-                        data={Object.entries(perf.importances).map(([k,v]) => ({ name: k.replace(/_/g,' '), value: v }))}
-                        layout="vertical"
-                        margin={{ left:140, right:30, top:0, bottom:0 }}
-                      >
-                        <XAxis type="number" tick={{ fontSize:11 }} />
-                        <YAxis type="category" dataKey="name" tick={{ fontSize:11 }} width={130} />
-                        <Tooltip formatter={v=>[v.toFixed(4),'Importance']} contentStyle={{ fontSize:12 }} />
-                        <Bar dataKey="value" fill="var(--gray-700)" radius={2} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </>
-                )}
               </div>
             )
           }

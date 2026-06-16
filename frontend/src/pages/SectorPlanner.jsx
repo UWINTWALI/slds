@@ -29,6 +29,7 @@ export default function SectorPlanner() {
 
   const [district, setDistrict] = useState(assignedDistrict ?? '')
   const [sector,   setSector]   = useState(assignedSector   ?? '')
+  const [mapColorBy, setMapColorBy] = useState('nightlight_mean')
 
   const { data: districts } = useApi(getDistricts)
 
@@ -191,11 +192,42 @@ export default function SectorPlanner() {
 
           {/* Full-width map */}
           <div className="card">
-            <div className="card-title">District Map: {district}</div>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+              <div className="card-title">District Map: {district}</div>
+              <select
+                value={mapColorBy}
+                onChange={e => setMapColorBy(e.target.value)}
+                style={{ width:'auto', padding:'4px 8px', fontSize:12 }}
+              >
+                {Object.entries(FEAT).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+            </div>
             {lm
               ? <div className="loading"><div className="spinner"/>Loading map…</div>
-              : <ChoroplethMap geojson={geojson} colorBy="nightlight_mean" height={420} />
+              : <ChoroplethMap geojson={geojson} colorBy={mapColorBy} height={420} />
             }
+            <div style={{ fontSize:11, color:'var(--gray-400)', marginTop:8, display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
+              <span style={{ fontSize:13 }}>Low</span>
+              <span style={{
+                display:'inline-block', width:120, height:10, borderRadius:3,
+                background: mapColorBy === 'nightlight_mean'
+                  ? 'linear-gradient(to right, #000000, #3c1400, #b45000, #ffb400, #ffff50)'
+                  : mapColorBy === 'predicted_poverty_rate'
+                  ? 'linear-gradient(to right, #fcfdbf, #fe9f6d, #de4968, #4f1275, #000004)'
+                  : 'linear-gradient(to right, #000004, #4f1275, #de4968, #fe9f6d, #fcfdbf)',
+                margin:'0 4px',
+              }} />
+              <span style={{ fontSize:13 }}>High</span>
+              <span style={{ marginLeft:'auto', color:'var(--gray-400)' }}>
+                {mapColorBy === 'nightlight_mean'
+                  ? 'Yellow = more light / higher electrification'
+                  : mapColorBy === 'predicted_poverty_rate'
+                  ? 'Bright = low poverty · Dark = high poverty'
+                  : 'Bright = high · Dark = low'}
+              </span>
+            </div>
             <div style={{ fontSize:11, color:'var(--gray-400)', marginTop:6 }}>
               All sectors in {district} displayed. Selected sector: <strong>{sector}</strong>
             </div>

@@ -627,22 +627,6 @@ function AnalystHome() {
                       </div>
                     ))}
                   </div>
-                  {perf.importances && (
-                    <>
-                      <div className="dash-section-label" style={{ marginBottom: 8 }}>Feature Importance</div>
-                      {Object.entries(perf.importances).sort(([,a],[,b]) => b - a).map(([k, v]) => (
-                        <div key={k} style={{ marginBottom: 7 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 2 }}>
-                            <span style={{ color: 'var(--gray-600)' }}>{k.replace(/_/g, ' ')}</span>
-                            <span style={{ fontWeight: 600 }}>{(v * 100).toFixed(1)}%</span>
-                          </div>
-                          <div style={{ height: 4, background: 'var(--gray-100)', borderRadius: 2 }}>
-                            <div style={{ height: '100%', width: `${v * 100}%`, background: meta.accent, borderRadius: 2 }} />
-                          </div>
-                        </div>
-                      ))}
-                    </>
-                  )}
                 </div>
               )
           }

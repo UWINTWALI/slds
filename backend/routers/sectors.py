@@ -6,9 +6,10 @@ from pathlib import Path
 
 router = APIRouter(prefix="/sectors", tags=["sectors"])
 
-DATASETS = Path(r"C:/Users/HP/Desktop/Proposal_Final/Datasets")
-SHP_ADM3 = (DATASETS / "rwa_adm_2006_nisr_wgs1984_20181002_shp_2"
-             / "rwa_adm3_2006_NISR_WGS1984_20181002.shp")
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+DATASETS    = BACKEND_DIR / "data" / "datasets"
+SHP_ADM3    = (DATASETS / "rwa_adm_2006_administrative_boundary"
+               / "rwa_adm3_2006_NISR_WGS1984_20181002.shp")
 
 
 @router.get("/{sector_name}")

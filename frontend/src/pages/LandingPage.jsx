@@ -132,8 +132,8 @@ function LoginForm({ onSwitch }) {
         <p>Access is restricted to government staff and authorised researchers.</p>
         <p style={{ marginTop: 6 }}>
           Issues? Contact{' '}
-          <a href="mailto:support@risa.rw" style={{ color: 'var(--rw-green)', textDecoration: 'underline' }}>
-            support@risa.rw
+          <a href="mailto:support@slds.rw" style={{ color: 'var(--rw-green)', textDecoration: 'underline' }}>
+            support@slds.rw
           </a>
         </p>
       </div>
@@ -386,7 +386,7 @@ export default function LandingPage() {
         <div className="landing-nav-right">
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <IconShield size={13} color="rgba(255,255,255,0.6)" />
-            <span className="landing-badge">Gov platform</span>
+            <span className="landing-badge">Rural Development Platform</span>
           </div>
         </div>
       </header>
@@ -403,9 +403,9 @@ export default function LandingPage() {
               <span className="landing-h1-accent">at Sector Scale</span>
             </h1>
             <p className="landing-lead">
-              SLDS gives MINALOC planners, district officers, and sector administrators
+              SLDS gives ministries in charge of infrastructure planning, district officers, and sector administrators
               a single platform to monitor development indicators, identify equity gaps,
-              and simulate the impact of infrastructure investments — all 416 sectors, in real time.
+              and simulate the impact of infrastructure investments over all 416 sectors in Rwanda, especially rural sectors.
             </p>
 
             {/* Stat pills */}
