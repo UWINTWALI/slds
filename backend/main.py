@@ -53,7 +53,28 @@ async def lifespan(app: FastAPI):
     yield
     print("🔄 Running lifespan shutdown...")
 
+
+def _cors_origins() -> list[str]:
+    """
+    Build the list of allowed CORS origins.
+    Set CORS_ORIGINS in the environment as a comma-separated list, e.g.:
+      https://slds-frontend.onrender.com,https://slds.example.com
+    Falls back to localhost dev origins when the variable is not set.
+    """
+    env = os.getenv("CORS_ORIGINS", "").strip()
+    base = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+    ]
+    if env:
+        extra = [o.strip() for o in env.split(",") if o.strip()]
+        return list(dict.fromkeys(base + extra))  # preserve order, deduplicate
+    return base
+
 print("Creating FastAPI app...")
+
 app = FastAPI(
     title="SLDS API",
     description="Sector-Level Development Simulator — Rwanda",
@@ -63,7 +84,8 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174"],
+    allow_origins=_cors_origins(),
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
