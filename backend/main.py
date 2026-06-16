@@ -1,34 +1,59 @@
 # backend/main.py
 import os
+import sys
 from contextlib import asynccontextmanager
 
-# Load .env before anything else so os.getenv() picks up all variables
+print("=== STARTING SLDS BACKEND ===")
+print(f"Python path: {sys.path}")
+print(f"Current directory: {os.getcwd()}")
+print(f"Files in current directory: {os.listdir('.')}")
+
+# Load .env before anything else
 from dotenv import load_dotenv
 load_dotenv()
 
+print(f"DATABASE_URL set: {'DATABASE_URL' in os.environ}")
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import text
-from sqlalchemy.exc import ProgrammingError
 
-# These are in the same folder, so direct imports work
-from backend.database import Base, engine
-from schemas import YourSchema  # if needed
-from routers import national, districts, sectors, simulation
-from routers import auth, users
-from routers import assistant
-from routers import reports
-import models.report  # noqa: F401 — register ORM tables with Base.metadata
+# Try importing database
+try:
+    print("Attempting to import database...")
+    from database import Base, engine
+    print("✅ Database imported successfully")
+except Exception as e:
+    print(f"❌ Failed to import database: {e}")
+    raise
 
+# Try importing routers
+try:
+    print("Attempting to import routers...")
+    from routers import national, districts, sectors, simulation
+    from routers import auth, users
+    from routers import assistant
+    from routers import reports
+    import models.report
+    print("✅ Routers imported successfully")
+except Exception as e:
+    print(f"❌ Failed to import routers: {e}")
+    raise
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create all tables on startup (no-op if they already exist)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    print("🔄 Running lifespan startup...")
+    try:
+        # Create all tables on startup
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        print("✅ Database tables created/verified")
+    except Exception as e:
+        print(f"❌ Database startup error: {e}")
+        raise
     yield
+    print("🔄 Running lifespan shutdown...")
 
-
+print("Creating FastAPI app...")
 app = FastAPI(
     title="SLDS API",
     description="Sector-Level Development Simulator — Rwanda",
@@ -59,7 +84,9 @@ app.include_router(assistant.router, prefix="/api")
 # Reports & notifications
 app.include_router(reports.router, prefix="/api")
 
-
 @app.get("/api/health")
 def health():
     return {"status": "ok", "service": "SLDS API"}
+
+print("✅ FastAPI app created successfully")
+print("=== SLDS BACKEND READY ===")
