@@ -20,3 +20,9 @@ alembic==1.13.1
 anthropic>=0.40.0
 bcrypt>=4.0.0
 python-dotenv>=1.0.0
+
+uvicorn
+pymupdf
+fastapi
+python-multipart
+
